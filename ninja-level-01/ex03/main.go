@@ -7,7 +7,6 @@ var y = "James Bond"
 var z = true
 
 func main() {
-	// the assigned values are called "zero values"
 	s := fmt.Sprintf("%v %v %v", x, y, z)
 	fmt.Println(s)
 }
