@@ -14,7 +14,7 @@ func main() {
 		log.Fatalf("\nReceived error while constructing new quiz\n\t %s\n", err)
 	}
 
-	cntCorrect, err := quiz.Run(os.Stdin)
+	cntCorrect, err := quiz.Run(os.Stdin, os.Stdout)
 	if err != nil {
 		log.Fatalf("\nReceived error while running quiz\n\t %s\n", err)
 	}

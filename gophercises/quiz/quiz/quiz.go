@@ -48,7 +48,25 @@ func New(csvFilename string) (*Quiz, error) {
 
 // Run executes an interactive session of the provided quiz,
 // by prompting an user with the set of questions on the provided writer.
-// TODO: Complete error description
-func (quiz *Quiz) Run(writer io.Writer) (cntCorrent int, err error) {
-	return 0, nil
+// It returns an error in case of a problem with the provided writer or reader
+func (quiz *Quiz) Run(writer io.Writer, reader io.Reader) (cntCorrent int, err error) {
+	cntCorrect := 0
+	for i, q := range quiz.Questions {
+		_, err := fmt.Fprintf(writer, "Problem #%d: %s = ", i+1, q.Description)
+		if err != nil {
+			return 0, fmt.Errorf("Caught error while writing to provided writer\n\t %s", err)
+		}
+
+		var givenAnswer string
+		_, err = fmt.Fscanln(reader, &givenAnswer)
+		if err != nil {
+			return 0, fmt.Errorf("Caught error while reading from provided reader\n\t %s", err)
+		}
+
+		if givenAnswer == q.Answer {
+			cntCorrect++
+		}
+	}
+
+	return cntCorrect, nil
 }
