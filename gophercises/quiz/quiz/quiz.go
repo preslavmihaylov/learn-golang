@@ -48,8 +48,8 @@ func New(csvFilename string) (*Quiz, error) {
 
 // Run executes an interactive session of the provided quiz,
 // by prompting an user with the set of questions on the provided writer.
-// It returns an error in case of a problem with the provided writer or reader
-func (quiz *Quiz) Run(writer io.Writer, reader io.Reader) (cntCorrent int, err error) {
+// It returns an error in case of a problem with the provided reader or writer
+func (quiz *Quiz) Run(reader io.Reader, writer io.Writer) (cntCorrent int, err error) {
 	cntCorrect := 0
 	for i, q := range quiz.Questions {
 		_, err := fmt.Fprintf(writer, "Problem #%d: %s = ", i+1, q.Description)
