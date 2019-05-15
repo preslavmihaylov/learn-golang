@@ -1,3 +1,7 @@
 # learn-golang
 
-This is the workspace with all the exercises & projects I've completed for the [Learn How To Code: Google's Go (golang) Programming Language](https://www.udemy.com/learn-how-to-code) course
+This repo contains my solutions to exercises of various Golang courses I've completed.
+
+Courses include:
+ * [Learn How To Code: Google's Go (golang) Programming Language](https://www.udemy.com/course/learn-how-to-code/)
+ * [gophercises](https://gophercises.com/)
