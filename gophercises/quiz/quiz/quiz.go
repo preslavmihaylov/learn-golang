@@ -48,8 +48,20 @@ func New(csvFilename string) (*Quiz, error) {
 
 // Run executes an interactive session of the provided quiz,
 // by prompting an user with the set of questions on the provided writer.
-// It returns an error in case of a problem with the provided reader or writer
+// It returns an error in case of a problem with the provided reader or writer.
 func (quiz *Quiz) Run(reader io.Reader, writer io.Writer) (cntCorrent int, err error) {
+	return quiz.RunUntimedQuiz(reader, writer)
+}
+
+// RunTimedQuiz executes a quiz which ends after the user finishes or a timer expires.
+// It returns an error in case of a problem with the provided reader or writer.
+func (quiz *Quiz) RunTimedQuiz(reader io.Reader, writer io.Writer) (cntCorrent int, err error) {
+	return 0, nil
+}
+
+// RunUntimedQuiz executes a quiz, which runs until the user finishes.
+// It returns an error in case of a problem with the provided reader or writer.
+func (quiz *Quiz) RunUntimedQuiz(reader io.Reader, writer io.Writer) (cntCorrent int, err error) {
 	cntCorrect := 0
 	for i, q := range quiz.Questions {
 		_, err := fmt.Fprintf(writer, "Problem #%d: %s = ", i+1, q.Description)
