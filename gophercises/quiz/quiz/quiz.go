@@ -71,13 +71,14 @@ func (quiz *Quiz) RunTimedQuiz(reader io.Reader, writer io.Writer, duration time
 	timer := time.NewTimer(duration)
 	for !quizComplete {
 		select {
-		case res, ok := <-resultsChan:
-			if res.err != nil {
-				return cntCorrect, res.err
+		case res, isOpen := <-resultsChan:
+			if !isOpen {
+				quizComplete = true
+				break
 			}
 
-			if !ok {
-				quizComplete = true
+			if res.err != nil {
+				return cntCorrect, res.err
 			}
 
 			cntCorrect++
