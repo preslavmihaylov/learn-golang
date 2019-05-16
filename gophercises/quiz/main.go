@@ -21,7 +21,7 @@ func main() {
 		"the time limit for taking the quiz in seconds. Default is forever.")
 	flag.Parse()
 
-	var q *quiz.Quiz
+	var q *quiz.Q
 	var err error
 	if quizTimeSecs != invalidTime {
 		q, err = quiz.FromCSVFileTimed(csvFilename, time.Duration(quizTimeSecs)*time.Second)

@@ -11,21 +11,21 @@ import (
 	"time"
 )
 
-// Quiz encapsulates a set of questions
-type Quiz struct {
+// Q stands for 'Quiz' and encapsulates a set of questions
+type Q struct {
 	questions []question
 	duration  time.Duration
 }
 
 // question represents a single question, consisting of a description and an answer
 type question struct {
-	description string
-	answer      string
+	desc string
+	ans  string
 }
 
 // FromCSVFileTimed creates a timed quiz with the specified duration from the provided CSV file.
 // It returns an error in case of a problem with the provided csv file
-func FromCSVFileTimed(csvFilename string, duration time.Duration) (*Quiz, error) {
+func FromCSVFileTimed(csvFilename string, duration time.Duration) (*Q, error) {
 	file, err := os.Open(csvFilename)
 	if err != nil {
 		return nil, fmt.Errorf("Caught error while opening file\n\t %s", err)
@@ -36,54 +36,54 @@ func FromCSVFileTimed(csvFilename string, duration time.Duration) (*Quiz, error)
 		return nil, fmt.Errorf("Caught error while reading CSV file\n\t %s", err)
 	}
 
-	quiz := Quiz{}
+	qz := Q{}
 	for rIndx, row := range records {
 		if len(row) != 2 {
 			return nil, fmt.Errorf(
 				"Invalid CSV format. Expected 2 columns per row, Got %d on row %d", len(row), rIndx)
 		}
 
-		quiz.questions = append(quiz.questions, question{description: row[0], answer: row[1]})
+		qz.questions = append(qz.questions, question{desc: row[0], ans: row[1]})
 	}
 
-	quiz.duration = duration
+	qz.duration = duration
 
-	return &quiz, nil
+	return &qz, nil
 }
 
 // FromCSVFileUntimed creates an untimed quiz from the provided CSV file.
 // It returns an error in case of a problem with the provided csv file
-func FromCSVFileUntimed(csvFilename string) (*Quiz, error) {
+func FromCSVFileUntimed(csvFilename string) (*Q, error) {
 	return FromCSVFileTimed(csvFilename, time.Duration(math.MaxInt64))
 }
 
 // QuestionsCnt returns the count of questions in quiz
-func (quiz *Quiz) QuestionsCnt() int {
-	return len(quiz.questions)
+func (qz *Q) QuestionsCnt() int {
+	return len(qz.questions)
 }
 
 type correctQuestion struct {
-	question question
-	err      error
+	q   question
+	err error
 }
 
 // Run executes an interactive session of the provided quiz,
 // by prompting an user with the set of questions on the provided writer.
 // In case of a timed quiz, the interactive session will end after the provided duration expires.
 // It returns an error in case of a problem with the provided reader or writer.
-func (quiz *Quiz) Run(reader io.Reader, writer io.Writer) (cntCorrent int, err error) {
-	resultsChan := make(chan correctQuestion)
-	go quiz.executeParallel(reader, writer, resultsChan)
+func (qz *Q) Run(reader io.Reader, writer io.Writer) (cntCorrent int, err error) {
+	correctQuestionsChan := make(chan correctQuestion)
+	go qz.executeParallel(reader, writer, correctQuestionsChan)
 
 	cntCorrect := 0
-	quizComplete := false
+	qzComplete := false
 
-	timer := time.NewTimer(quiz.duration)
-	for !quizComplete {
+	timer := time.NewTimer(qz.duration)
+	for !qzComplete {
 		select {
-		case res, isOpen := <-resultsChan:
+		case res, isOpen := <-correctQuestionsChan:
 			if !isOpen {
-				quizComplete = true
+				qzComplete = true
 				break
 			}
 
@@ -100,9 +100,9 @@ func (quiz *Quiz) Run(reader io.Reader, writer io.Writer) (cntCorrent int, err e
 	return cntCorrect, nil
 }
 
-func (quiz *Quiz) executeParallel(reader io.Reader, writer io.Writer, resultsChan chan correctQuestion) {
-	for i, q := range quiz.questions {
-		_, err := fmt.Fprintf(writer, "Problem #%d: %s = ", i+1, q.description)
+func (qz *Q) executeParallel(reader io.Reader, writer io.Writer, resultsChan chan correctQuestion) {
+	for i, qstion := range qz.questions {
+		_, err := fmt.Fprintf(writer, "Problem #%d: %s = ", i+1, qstion.desc)
 		if err != nil {
 			resultsChan <- correctQuestion{question{},
 				fmt.Errorf("Caught error while writing to provided writer\n\t %s", err)}
@@ -119,8 +119,8 @@ func (quiz *Quiz) executeParallel(reader io.Reader, writer io.Writer, resultsCha
 			return
 		}
 
-		if givenAnswer == q.answer {
-			resultsChan <- correctQuestion{q, nil}
+		if givenAnswer == qstion.ans {
+			resultsChan <- correctQuestion{qstion, nil}
 		}
 	}
 
