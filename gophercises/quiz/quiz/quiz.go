@@ -6,29 +6,26 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"time"
 )
 
 // Quiz encapsulates a set of questions
 type Quiz struct {
-	Questions []Question
+	questions []question
+	duration  time.Duration
 }
 
-// Question represents a single question, consisting of a description and an answer
-type Question struct {
-	Description string
-	Answer      string
+// question represents a single question, consisting of a description and an answer
+type question struct {
+	description string
+	answer      string
 }
 
-type quizResultParallel struct {
-	question Question
-	err      error
-}
-
-// New returns a new *Quiz after reading a set of questions from the provided CSV File.
-// It returns an error in case there is a problem with the csv file or its format
-func New(csvFilename string) (*Quiz, error) {
+// FromCSVFileTimed creates a timed quiz with the specified duration from the provided CSV file.
+// It returns an error in case of a problem with the provided csv file
+func FromCSVFileTimed(csvFilename string, duration time.Duration) (*Quiz, error) {
 	file, err := os.Open(csvFilename)
 	if err != nil {
 		return nil, fmt.Errorf("Caught error while opening file\n\t %s", err)
@@ -46,29 +43,42 @@ func New(csvFilename string) (*Quiz, error) {
 				"Invalid CSV format. Expected 2 columns per row, Got %d on row %d", len(row), rIndx)
 		}
 
-		quiz.Questions = append(quiz.Questions, Question{Description: row[0], Answer: row[1]})
+		quiz.questions = append(quiz.questions, question{description: row[0], answer: row[1]})
 	}
+
+	quiz.duration = duration
 
 	return &quiz, nil
 }
 
-// Run executes an interactive session of the provided quiz,
-// by prompting an user with the set of questions on the provided writer.
-// It returns an error in case of a problem with the provided reader or writer.
-func (quiz *Quiz) Run(reader io.Reader, writer io.Writer) (cntCorrent int, err error) {
-	return quiz.RunTimedQuiz(reader, writer, 30*time.Second)
+// FromCSVFileUntimed creates an untimed quiz from the provided CSV file.
+// It returns an error in case of a problem with the provided csv file
+func FromCSVFileUntimed(csvFilename string) (*Quiz, error) {
+	return FromCSVFileTimed(csvFilename, time.Duration(math.MaxInt64))
 }
 
-// RunTimedQuiz executes a quiz which ends after the user finishes or a timer expires.
+// QuestionsCnt returns the count of questions in quiz
+func (quiz *Quiz) QuestionsCnt() int {
+	return len(quiz.questions)
+}
+
+type correctQuestion struct {
+	question question
+	err      error
+}
+
+// Run executes an interactive session of the provided quiz,
+// by prompting an user with the set of questions on the provided writer.
+// In case of a timed quiz, the interactive session will end after the provided duration expires.
 // It returns an error in case of a problem with the provided reader or writer.
-func (quiz *Quiz) RunTimedQuiz(reader io.Reader, writer io.Writer, duration time.Duration) (cntCorrent int, err error) {
-	resultsChan := make(chan quizResultParallel)
-	go quiz.runQuizParallel(reader, writer, resultsChan)
+func (quiz *Quiz) Run(reader io.Reader, writer io.Writer) (cntCorrent int, err error) {
+	resultsChan := make(chan correctQuestion)
+	go quiz.executeParallel(reader, writer, resultsChan)
 
 	cntCorrect := 0
 	quizComplete := false
 
-	timer := time.NewTimer(duration)
+	timer := time.NewTimer(quiz.duration)
 	for !quizComplete {
 		select {
 		case res, isOpen := <-resultsChan:
@@ -90,29 +100,11 @@ func (quiz *Quiz) RunTimedQuiz(reader io.Reader, writer io.Writer, duration time
 	return cntCorrect, nil
 }
 
-// RunUntimedQuiz executes a quiz, which runs until the user finishes.
-// It returns an error in case of a problem with the provided reader or writer.
-func (quiz *Quiz) RunUntimedQuiz(reader io.Reader, writer io.Writer) (cntCorrent int, err error) {
-	resultsChan := make(chan quizResultParallel)
-	go quiz.runQuizParallel(reader, writer, resultsChan)
-
-	cntCorrect := 0
-	for res := range resultsChan {
-		if res.err != nil {
-			return cntCorrect, res.err
-		}
-
-		cntCorrect++
-	}
-
-	return cntCorrect, nil
-}
-
-func (quiz *Quiz) runQuizParallel(reader io.Reader, writer io.Writer, resultsChan chan quizResultParallel) {
-	for i, q := range quiz.Questions {
-		_, err := fmt.Fprintf(writer, "Problem #%d: %s = ", i+1, q.Description)
+func (quiz *Quiz) executeParallel(reader io.Reader, writer io.Writer, resultsChan chan correctQuestion) {
+	for i, q := range quiz.questions {
+		_, err := fmt.Fprintf(writer, "Problem #%d: %s = ", i+1, q.description)
 		if err != nil {
-			resultsChan <- quizResultParallel{Question{},
+			resultsChan <- correctQuestion{question{},
 				fmt.Errorf("Caught error while writing to provided writer\n\t %s", err)}
 			close(resultsChan)
 			return
@@ -121,14 +113,14 @@ func (quiz *Quiz) runQuizParallel(reader io.Reader, writer io.Writer, resultsCha
 		var givenAnswer string
 		_, err = fmt.Fscanln(reader, &givenAnswer)
 		if err != nil {
-			resultsChan <- quizResultParallel{Question{},
+			resultsChan <- correctQuestion{question{},
 				fmt.Errorf("Caught error while reading from provided reader\n\t %s", err)}
 			close(resultsChan)
 			return
 		}
 
-		if givenAnswer == q.Answer {
-			resultsChan <- quizResultParallel{q, nil}
+		if givenAnswer == q.answer {
+			resultsChan <- correctQuestion{q, nil}
 		}
 	}
 
