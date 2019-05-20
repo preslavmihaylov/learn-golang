@@ -1,0 +1,6 @@
+Tasks:
+- [ ] Accept YAML file as command line option
+- [ ] Create a JSON Handler as well
+- [ ] Provide json file as parameter as well
+- [ ] YAML and json should be mutually exclusive
+- [ ] Use BoltDB to store paths in a db rather than a map
