@@ -12,16 +12,14 @@ import (
 // If the path is not provided in the map, then a default handler
 // will be called.
 func MapHandler(redirs map[string]string) http.HandlerFunc {
-	urlShortenerMux := http.NewServeMux()
-	urlShortenerMux.HandleFunc("/", defaultHandler)
-
-	for url, RedirectURL := range redirs {
-		urlShortenerMux.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, RedirectURL, 301)
-		})
+	return func(w http.ResponseWriter, r *http.Request) {
+		u := r.URL.Path
+		if redir, ok := redirs[u]; ok {
+			http.Redirect(w, r, redir, 301)
+		} else {
+			defaultHandler(w, r)
+		}
 	}
-
-	return urlShortenerMux.ServeHTTP
 }
 
 func defaultHandler(w http.ResponseWriter, r *http.Request) {
