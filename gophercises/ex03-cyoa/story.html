@@ -1,0 +1,68 @@
+<body data-gr-c-s-loaded="true">
+    <section class="page">
+        <h1>{{.Title}}</h1>
+        {{range .Paragraphs}}
+        <p>{{.}}</p>
+        {{end}}
+        {{if not .Options}}
+            <div id="end">END</div>
+        {{else}}
+        <ul>
+            {{range .Options}}
+            <li><a href="/{{.Title}}">{{.Text}}</a></li>
+            {{end}}
+        </ul>
+        {{end}}
+    </section>
+		<footer>
+			<center>
+            This is a demo of an exercise from the free course <a href="https://gophercises.com">Gophercises</a>. Check it out if you are interested in learning/practicing Go.
+        </center>
+    </footer>
+    <style>
+        body {
+            font-family: helvetica, arial;
+        }
+        h1 {
+            text-align:center;
+            position:relative;
+        }
+        .page {
+            width: 80%;
+            max-width: 500px;
+            margin: auto;
+            margin-top: 40px;
+            margin-bottom: 40px;
+            padding: 80px;
+            background: #FFFCF6;
+            border: 1px solid #eee;
+            box-shadow: 0 10px 6px -6px #777;
+        }
+        ul {
+            border-top: 1px dotted #ccc;
+            padding: 10px 0 0 0;
+            -webkit-padding-start: 0;
+        }
+        li {
+            padding-top: 10px;
+        }
+        a,
+        a:visited {
+            text-decoration: none;
+            color: #6295b5;
+        }
+        a:active,
+        a:hover {
+            color: #7792a2;
+        }
+        p {
+            text-indent: 1em;
+        }
+        #end {
+            text-align: center;
+            font-size: 30px;
+            font-weight: bold;
+            padding-top: 20px;
+        }
+    </style>
+</body>
