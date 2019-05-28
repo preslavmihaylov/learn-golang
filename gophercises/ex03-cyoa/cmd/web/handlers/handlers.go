@@ -7,6 +7,7 @@ import (
 	"text/template"
 	"unicode/utf8"
 
+	"github.com/preslavmihaylov/learn-golang/gophercises/ex03-cyoa/options"
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex03-cyoa/story"
 )
 
@@ -16,12 +17,13 @@ var tmpl *template.Template
 func init() {
 	var err error
 
-	st, err = story.FromJSONFile("gopher.json")
+	opts := options.ParseArgs()
+	st, err = story.FromJSONFile(opts.JSONFilename)
 	if err != nil {
 		log.Fatalf("received error while parsing story: %s", err)
 	}
 
-	tmpl, err = template.ParseFiles("story.html")
+	tmpl, err = template.ParseFiles(opts.HTMLTemplateFilename)
 	if err != nil {
 		log.Fatalf("failed to parse template. Received err: %s", err)
 	}
