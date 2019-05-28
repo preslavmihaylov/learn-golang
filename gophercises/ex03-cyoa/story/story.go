@@ -4,7 +4,7 @@ package story
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 )
 
 // Story encapsulates a set of chapters, indexed by string id
@@ -27,35 +27,20 @@ type Chapter struct {
 // a struct of type Story.
 // In case of an issue with the file or json contents, an error is returned.
 func FromJSONFile(jsonFilename string) (*Story, error) {
-	jsonBytes, err := ioutil.ReadFile(jsonFilename)
+	jsonFile, err := os.Open(jsonFilename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read json file: %s", err)
 	}
 
-	story := newStory()
-	storyRawJSON := map[string]*json.RawMessage{}
-	err = json.Unmarshal(jsonBytes, &storyRawJSON)
+	st := newStory()
+	d := json.NewDecoder(jsonFile)
+
+	err = d.Decode(&st.chapterMap)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal json file: %s", err)
+		return nil, fmt.Errorf("failed to decode json file: %s", err)
 	}
 
-	for chapterID, ChapterRawJSON := range storyRawJSON {
-		currChapter := Chapter{}
-		err = json.Unmarshal([]byte(*ChapterRawJSON), &currChapter)
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal chapter %s: %s", chapterID, err)
-		}
-
-		story.chapterMap[chapterID] = currChapter
-	}
-
-	if _, ok := story.chapterMap[story.intro]; !ok {
-		return nil, fmt.Errorf(
-			"story is missing an intro chapter. Expected intro chapter with id: %s",
-			story.intro)
-	}
-
-	return story, nil
+	return st, nil
 }
 
 // ChapterByID attempts to find a chapter in the story by the provided id.
