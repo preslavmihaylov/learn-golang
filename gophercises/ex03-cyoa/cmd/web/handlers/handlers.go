@@ -17,13 +17,12 @@ var tmpl *template.Template
 func init() {
 	var err error
 
-	opts := options.ParseArgs()
-	st, err = story.FromJSONFile(opts.JSONFilename)
+	st, err = story.FromJSONFile(options.JSONFilename())
 	if err != nil {
 		log.Fatalf("received error while parsing story: %s", err)
 	}
 
-	tmpl, err = template.ParseFiles(opts.HTMLTemplateFilename)
+	tmpl, err = template.ParseFiles(options.HTMLTemplateFilename())
 	if err != nil {
 		log.Fatalf("failed to parse template. Received err: %s", err)
 	}
