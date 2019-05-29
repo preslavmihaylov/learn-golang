@@ -24,7 +24,7 @@ func NewCYOAHandler(st *story.Story, tmpl *template.Template, opts ...CYOAHandle
 		opt(&h)
 	}
 
-	return h
+	return &h
 }
 
 // WithPrefix returns a functional option setting the prefix of the internal cyoa handler type
@@ -38,7 +38,7 @@ func WithPrefix(prefix string) CYOAHandlerOpts {
 // If the provided url path is the handler's prefix (default "/"), the intro chapter will be displayed.
 // If the provided url is anything else, the chapter with the given id will be displayed.
 // In case of an error (chapter not found, can't render template), an error status code is returned
-func (h cyoaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *cyoaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var chapter story.Chapter
 	var err error
 
