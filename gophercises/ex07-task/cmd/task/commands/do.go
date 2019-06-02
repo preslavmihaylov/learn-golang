@@ -8,11 +8,13 @@ var doCmd = &cobra.Command{
 	Use:   "do",
 	Short: "marks a TODO list item as complete",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		// Do Stuff Here
-	},
+	Run:   runDoCmd,
 }
 
 func init() {
 	rootCmd.AddCommand(doCmd)
+}
+
+func runDoCmd(cmd *cobra.Command, args []string) {
+	// Do Stuff Here
 }
