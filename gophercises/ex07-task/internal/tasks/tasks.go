@@ -3,6 +3,7 @@ package tasks
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex07-task/internal/tasks/tasksdb"
 )
@@ -15,7 +16,21 @@ var ts []*Task
 func init() {
 	tsDTOs, err := tasksdb.Read()
 	if err != nil {
-		fmt.Printf("failed to load tasks db. Received err: %s\n", err)
+		switch err {
+		case tasksdb.ErrDBNotFound:
+			fmt.Println("Database not found. Creating a new empty DB...")
+
+			err = tasksdb.Create()
+			if err != nil {
+				log.Fatalf("failed creating new database: %s", err)
+			}
+
+			ts = []*Task{}
+		default:
+			log.Fatalf("error while reading database: %s", err)
+		}
+
+		return
 	}
 
 	ts = toTasks(tsDTOs)

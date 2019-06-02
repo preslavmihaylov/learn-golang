@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 )
 
 // TaskDTO encapsulates a simple task with a description as pulled from database
@@ -14,12 +15,27 @@ type TaskDTO struct {
 
 const dbFilename = "tasks.db"
 
-// Read reads the stored tasks in the db and returns a slice of task DTOs.
-// It returns an error in case of an issue with the db.
+var (
+	// ErrDBNotFound occurs when the database is not found while reading it
+	ErrDBNotFound = fmt.Errorf("database not found")
+)
+
+// Read the stored tasks from the db.
+// Returns a slice of task DTOs.
+// Returns an error in case of an issue with the db.
 func Read() ([]*TaskDTO, error) {
 	b, err := ioutil.ReadFile(dbFilename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %s", err)
+		switch {
+		case os.IsNotExist(err):
+			return nil, ErrDBNotFound
+		default:
+			return nil, fmt.Errorf("failed to open db: %s", err)
+		}
+	}
+
+	if len(b) == 0 {
+		return []*TaskDTO{}, nil
 	}
 
 	ts := []*TaskDTO{}
@@ -31,7 +47,7 @@ func Read() ([]*TaskDTO, error) {
 	return ts, nil
 }
 
-// Write persists the provided list of task DTOs in the db.
+// Write the provided list of task DTOs in the db.
 // It returns an error in case of an issue with the provided data or the db.
 func Write(ts []*TaskDTO) error {
 	b, err := json.Marshal(ts)
@@ -42,6 +58,21 @@ func Write(ts []*TaskDTO) error {
 	err = ioutil.WriteFile(dbFilename, b, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write to file: %s", err)
+	}
+
+	return nil
+}
+
+// Create a new empty database on the filesystem
+func Create() error {
+	f, err := os.Create(dbFilename)
+	if err != nil {
+		return fmt.Errorf("failed creating new database: %s", err)
+	}
+
+	err = f.Close()
+	if err != nil {
+		return fmt.Errorf("failed closing newly created database: %s", err)
 	}
 
 	return nil
