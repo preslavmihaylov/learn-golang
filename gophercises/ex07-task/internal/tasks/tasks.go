@@ -1,3 +1,4 @@
+// Package tasks deals with managing adding, doing and listing tasks
 package tasks
 
 import (
@@ -6,6 +7,7 @@ import (
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex07-task/internal/tasks/tasksdb"
 )
 
+// Task encapsulates a simple task with a description
 type Task tasksdb.TaskDTO
 
 var ts []*Task
@@ -19,10 +21,13 @@ func init() {
 	ts = toTasks(tsDTOs)
 }
 
+// New returns a new Task with the provided description
 func New(desc string) *Task {
 	return &Task{Desc: desc}
 }
 
+// Add adds the provided task to the tasks list.
+// It returns an error in case of a problem with the db.
 func Add(task *Task) error {
 	ts = append(ts, task)
 
@@ -34,10 +39,13 @@ func Add(task *Task) error {
 	return nil
 }
 
+// List returns the currently active tasks
 func List() []*Task {
 	return ts
 }
 
+// Do marks a given task complete, given its id.
+// It returns an error in case of an invalid task id or a problem with the db.
 func Do(id int) error {
 	if id >= len(ts) {
 		return fmt.Errorf("invalid task id")
