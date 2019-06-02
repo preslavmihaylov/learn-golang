@@ -11,7 +11,7 @@ import (
 // Task encapsulates a simple task with a description
 type Task tasksdb.TaskDTO
 
-var ts []*Task
+var ts []Task
 
 func init() {
 	tsDTOs, err := tasksdb.Read()
@@ -25,7 +25,7 @@ func init() {
 				log.Fatalf("failed creating new database: %s", err)
 			}
 
-			ts = []*Task{}
+			ts = []Task{}
 		default:
 			log.Fatalf("error while reading database: %s", err)
 		}
@@ -44,7 +44,7 @@ func New(desc string) *Task {
 // Add adds the provided task to the tasks list.
 // It returns an error in case of a problem with the db.
 func Add(task *Task) error {
-	ts = append(ts, task)
+	ts = append(ts, *task)
 
 	err := tasksdb.Write(toTaskDTOs(ts))
 	if err != nil {
@@ -55,7 +55,7 @@ func Add(task *Task) error {
 }
 
 // List returns the currently active tasks
-func List() []*Task {
+func List() []Task {
 	return ts
 }
 
@@ -75,21 +75,21 @@ func Do(id int) error {
 	return nil
 }
 
-func toTaskDTOs(ts []*Task) []*tasksdb.TaskDTO {
-	tsDTOs := []*tasksdb.TaskDTO{}
+func toTaskDTOs(ts []Task) []tasksdb.TaskDTO {
+	tsDTOs := []tasksdb.TaskDTO{}
 	for _, t := range ts {
-		tDTO := tasksdb.TaskDTO(*t)
-		tsDTOs = append(tsDTOs, &tDTO)
+		tDTO := tasksdb.TaskDTO(t)
+		tsDTOs = append(tsDTOs, tDTO)
 	}
 
 	return tsDTOs
 }
 
-func toTasks(tsDTOs []*tasksdb.TaskDTO) []*Task {
-	ts := []*Task{}
+func toTasks(tsDTOs []tasksdb.TaskDTO) []Task {
+	ts := []Task{}
 	for _, tDTO := range tsDTOs {
-		t := Task(*tDTO)
-		ts = append(ts, &t)
+		t := Task(tDTO)
+		ts = append(ts, t)
 	}
 
 	return ts
