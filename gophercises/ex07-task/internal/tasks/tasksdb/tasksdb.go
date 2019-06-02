@@ -53,6 +53,7 @@ func Read() ([]TaskDTO, error) {
 	}()
 
 	ts := []TaskDTO{}
+	// TODO: Extract function
 	err = db.View(func(tx *bolt.Tx) error {
 		bk := tx.Bucket(tasksBucket)
 		if bk == nil {
@@ -93,6 +94,7 @@ func Write(ts []TaskDTO) error {
 		}
 	}()
 
+	// TODO: Extract function
 	err = db.Update(func(tx *bolt.Tx) error {
 		bs, err := json.Marshal(ts)
 		if err != nil {
@@ -144,6 +146,7 @@ func Create() error {
 		}
 	}()
 
+	// TODO: Extract function
 	err = db.Update(func(tx *bolt.Tx) error {
 		bk, err := tx.CreateBucket(tasksBucket)
 		if err != nil {
