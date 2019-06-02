@@ -1,6 +1,9 @@
 package commands
 
 import (
+	"fmt"
+
+	"github.com/preslavmihaylov/learn-golang/gophercises/ex07-task/internal/tasks"
 	"github.com/spf13/cobra"
 )
 
@@ -16,5 +19,9 @@ func init() {
 }
 
 func runListCmd(cmd *cobra.Command, args []string) {
-	// Do Stuff Here
+	ts := tasks.List()
+	fmt.Println("You have the following tasks:")
+	for i, t := range ts {
+		fmt.Printf("%d. %s\n", i, t.Desc)
+	}
 }
