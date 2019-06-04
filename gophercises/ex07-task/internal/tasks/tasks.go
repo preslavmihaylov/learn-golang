@@ -5,22 +5,22 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/preslavmihaylov/learn-golang/gophercises/ex07-task/internal/tasks/tasksdb"
+	"github.com/preslavmihaylov/learn-golang/gophercises/ex07-task/internal/tasks/repo"
 )
 
 // Task encapsulates a simple task with a description
-type Task tasksdb.TaskDTO
+type Task repo.TaskDTO
 
 var ts []Task
 
 func init() {
-	tsDTOs, err := tasksdb.Read()
+	tsDTOs, err := repo.Read()
 	if err != nil {
 		switch err {
-		case tasksdb.ErrDBNotFound:
+		case repo.ErrDBNotFound:
 			fmt.Println("Database not found. Creating a new empty DB...")
 
-			err = tasksdb.Create()
+			err = repo.Create()
 			if err != nil {
 				log.Fatalf("failed creating new database: %s", err)
 			}
@@ -46,7 +46,7 @@ func New(desc string) *Task {
 func Add(task *Task) error {
 	ts = append(ts, *task)
 
-	err := tasksdb.Write(toTaskDTOs(ts))
+	err := repo.Write(toTaskDTOs(ts))
 	if err != nil {
 		return fmt.Errorf("failed to write to db: %s", err)
 	}
@@ -67,7 +67,7 @@ func Do(id int) error {
 	}
 
 	ts = append(ts[:id], ts[id+1:]...)
-	err := tasksdb.Write(toTaskDTOs(ts))
+	err := repo.Write(toTaskDTOs(ts))
 	if err != nil {
 		return fmt.Errorf("failed to write to db: %s", err)
 	}
@@ -75,17 +75,17 @@ func Do(id int) error {
 	return nil
 }
 
-func toTaskDTOs(ts []Task) []tasksdb.TaskDTO {
-	tsDTOs := []tasksdb.TaskDTO{}
+func toTaskDTOs(ts []Task) []repo.TaskDTO {
+	tsDTOs := []repo.TaskDTO{}
 	for _, t := range ts {
-		tDTO := tasksdb.TaskDTO(t)
+		tDTO := repo.TaskDTO(t)
 		tsDTOs = append(tsDTOs, tDTO)
 	}
 
 	return tsDTOs
 }
 
-func toTasks(tsDTOs []tasksdb.TaskDTO) []Task {
+func toTasks(tsDTOs []repo.TaskDTO) []Task {
 	ts := []Task{}
 	for _, tDTO := range tsDTOs {
 		t := Task(tDTO)

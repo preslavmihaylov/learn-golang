@@ -1,6 +1,10 @@
-package tasksdb
+package repo
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/preslavmihaylov/learn-golang/gophercises/ex07-task/internal/dbconn"
+)
 
 func TestReadingEmptyDB(tst *testing.T) {
 	err := Create()
@@ -16,6 +20,8 @@ func TestReadingEmptyDB(tst *testing.T) {
 	if len(ts) != 0 {
 		tst.Errorf("failed to read from empty db. Expected tasks with length 0, got %d", len(ts))
 	}
+
+	dbconn.RemoveDB()
 }
 
 func TestReadingSeveralElements(tst *testing.T) {
@@ -49,4 +55,6 @@ func TestReadingSeveralElements(tst *testing.T) {
 			tst.Errorf("incorrect task. Task %d: expected \"%s\", got \"%s\"", i, tsInput[i].Desc, tv.Desc)
 		}
 	}
+
+	dbconn.RemoveDB()
 }
