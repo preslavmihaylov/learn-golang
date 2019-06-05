@@ -1,6 +1,7 @@
 package dbconn
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -14,50 +15,13 @@ var (
 	dbPermissions = os.FileMode(0644)
 )
 
-// CreateDB creates a new empty database.
-// In case of an issue with removing old database or creating a new one, an error is returned.
-// In case of failing to close db connection, a panic occurs.
-func CreateDB() error {
-	err := RemoveDB()
-	if err != nil {
-		return fmt.Errorf("dbconn.CreateDB failed to remove existing db: %s", err)
-	}
-
-	db, err := bolt.Open(dbFilename, dbPermissions, nil)
-	if err != nil {
-		return fmt.Errorf("dbconn.CreateDB failed to create new db: %s", err)
-	}
-	defer func() {
-		err := db.Close()
-		if err != nil {
-			log.Fatalf("dbconn.CreateDB failed closing database: %s", err)
-		}
-	}()
-
-	return nil
-}
-
-// RemoveDB removes the existing database.
-// If no database exists, it returns nil.
-// In case of an error with removing old database, an error is returned.
-func RemoveDB() error {
-	if DBExists() {
-		err := os.Remove(dbFilename)
-		if err != nil {
-			return fmt.Errorf("dbconn.RemoveDB failed to remove old db: %s", err)
-		}
-	}
-
-	return nil
-}
-
-// Pull gets the value against the given key from the provided bucket.
+// Get the value against the given key from the provided bucket.
 // It unmarshals the json stored inside into the data provided.
 // data should be a pointer type.
 // In case of an issue with opening db connection, reading bucket, retrieving value or unmarshaling,
 // an error is returned.
 // In case of failing to close db connection, a panic occurs.
-func Pull(bucket []byte, key []byte, data interface{}) error {
+func Get(bucket []byte, key []byte, data interface{}) error {
 	db, err := bolt.Open(dbFilename, dbPermissions, nil)
 	if err != nil {
 		return fmt.Errorf("dbconn.Pull failed opening db connection: %s", err)
@@ -89,12 +53,49 @@ func Pull(bucket []byte, key []byte, data interface{}) error {
 	})
 }
 
-// Push marshals the provided data into json and pushes that as value
+func Add(bucket []byte, data interface{}) error {
+	db, err := bolt.Open(dbFilename, dbPermissions, nil)
+	if err != nil {
+		return fmt.Errorf("dbconn.Push failed to open db: %s", err)
+	}
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			log.Fatalf("dbconn.Push failed to close db: %s", err)
+		}
+	}()
+
+	return db.Update(func(tx *bolt.Tx) error {
+		bs, err := json.Marshal(data)
+		if err != nil {
+			return fmt.Errorf("dbconn.Push failed to marshal data: %s", err)
+		}
+
+		bk, err := tx.CreateBucketIfNotExists(bucket)
+		if err != nil {
+			return fmt.Errorf("dbconn.Push failed to get or create bucket %s: %s", bucket, err)
+		}
+
+		nextID, err := bk.NextSequence()
+		if err != nil {
+			return fmt.Errorf("failed to get new id from bucket: %s", err)
+		}
+
+		err = bk.Put(itob(nextID), bs)
+		if err != nil {
+			return fmt.Errorf("dbconn.Push failed persisting data: %s", err)
+		}
+
+		return nil
+	})
+}
+
+// Put marshals the provided data into json and sets that as value
 // to the provided key in the given bucket.
 // In case of an issue with opening db, marshaling data, getting bucket or storing data,
 // an error is returned.
 // In case of failing to close db connection, a panic occurs.
-func Push(bucket []byte, key []byte, data interface{}) error {
+func Put(bucket []byte, key []byte, data interface{}) error {
 	db, err := bolt.Open(dbFilename, dbPermissions, nil)
 	if err != nil {
 		return fmt.Errorf("dbconn.Push failed to open db: %s", err)
@@ -126,17 +127,90 @@ func Push(bucket []byte, key []byte, data interface{}) error {
 	})
 }
 
-// DBExists checks if the database exists.
-// It returns an error in case there is an issue with reading the database info from the filesystem.
-func DBExists() bool {
-	if _, err := os.Stat(dbFilename); err != nil {
-		switch {
-		case os.IsNotExist(err):
-			return false
-		default:
-			log.Fatalf("dbconn.DBExists received unexpected error when reading db: %s", err)
+func ForEach(bucket []byte, callback func(val []byte) error) error {
+	db, err := bolt.Open(dbFilename, dbPermissions, nil)
+	if err != nil {
+		return fmt.Errorf("dbconn.ForEach failed to open db: %s", err)
+	}
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			log.Fatalf("dbconn.ForEach failed to close db: %s", err)
 		}
+	}()
+
+	return db.View(func(tx *bolt.Tx) error {
+		bk := tx.Bucket(bucket)
+		if bk == nil {
+			return fmt.Errorf("dbconn.ForEach failed to get bucket %s: %s", bucket, err)
+		}
+
+		cursor := bk.Cursor()
+		for k, v := cursor.First(); k != nil; k, v = cursor.Next() {
+			err := callback(v)
+			if err != nil {
+				return fmt.Errorf("dbconn.ForEach received error from callback: %s", err)
+			}
+		}
+
+		return nil
+	})
+}
+
+func NextIDForBucket(bucket []byte) ([]byte, error) {
+	db, err := bolt.Open(dbFilename, dbPermissions, nil)
+	if err != nil {
+		return nil, fmt.Errorf("dbconn.NextIDForBucket failed to open db: %s", err)
+	}
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			log.Fatalf("dbconn.NextIDForBucket failed to close db: %s", err)
+		}
+	}()
+
+	nextIDbs := []byte{}
+	err = db.View(func(tx *bolt.Tx) error {
+		bk := tx.Bucket(bucket)
+		if bk == nil {
+			return fmt.Errorf("dbconn.NextIDForBucket failed to get bucket %s", bucket)
+		}
+
+		nextIDbs = itob(bk.Sequence() + 1)
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	return true
+	return nextIDbs, nil
+}
+
+func CreateBucket(bucket []byte) error {
+	db, err := bolt.Open(dbFilename, dbPermissions, nil)
+	if err != nil {
+		return fmt.Errorf("dbconn.Push failed to open db: %s", err)
+	}
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			log.Fatalf("dbconn.Push failed to close db: %s", err)
+		}
+	}()
+
+	return db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucket(bucket)
+		if err != nil {
+			return fmt.Errorf("dbconn.CreateBucket failed to create bucket %s: %s", bucket, err)
+		}
+
+		return nil
+	})
+}
+
+func itob(v uint64) []byte {
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, v)
+	return b
 }

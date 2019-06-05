@@ -23,9 +23,13 @@ var listCmd = &cobra.Command{
 	Short: "lists the currently active tasks in your TODO list",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		ts := tasks.List()
+		tsks, err := tasks.List()
+		if err != nil {
+			log.Fatalf("list cmd failed with error: %s", err)
+		}
+
 		fmt.Println("You have the following tasks:")
-		for i, t := range ts {
+		for i, t := range tsks {
 			fmt.Printf("%d. %s\n", i, t.Desc)
 		}
 	},

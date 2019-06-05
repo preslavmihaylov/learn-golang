@@ -3,7 +3,6 @@ package tasks
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex07-task/internal/tasks/repo"
 )
@@ -11,42 +10,15 @@ import (
 // Task encapsulates a simple task with a description
 type Task repo.TaskDTO
 
-var ts []Task
-
-func init() {
-	tsDTOs, err := repo.Read()
-	if err != nil {
-		switch err {
-		case repo.ErrDBNotFound:
-			fmt.Println("Database not found. Creating a new empty DB...")
-
-			err = repo.Create()
-			if err != nil {
-				log.Fatalf("failed creating new database: %s", err)
-			}
-
-			ts = []Task{}
-		default:
-			log.Fatalf("error while reading database: %s", err)
-		}
-
-		return
-	}
-
-	ts = toTasks(tsDTOs)
-}
-
 // New returns a new Task with the provided description
 func New(desc string) *Task {
-	return &Task{Desc: desc}
+	return &Task{ID: []byte{}, Desc: desc, Complete: false}
 }
 
 // Add adds the provided task to the tasks list.
 // It returns an error in case of a problem with the db.
 func Add(task *Task) error {
-	ts = append(ts, *task)
-
-	err := repo.Write(toTaskDTOs(ts))
+	err := repo.Add(repo.TaskDTO(*task))
 	if err != nil {
 		return fmt.Errorf("failed to write to db: %s", err)
 	}
@@ -55,34 +27,34 @@ func Add(task *Task) error {
 }
 
 // List returns the currently active tasks
-func List() []Task {
-	return ts
+func List() ([]Task, error) {
+	tskDTOs, err := repo.GetAllIncomplete()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all tasks from repo: %s", err)
+	}
+
+	return toTasks(tskDTOs), nil
 }
 
 // Do marks a given task complete, given its id.
 // It returns an error in case of an invalid task id or a problem with the db.
 func Do(id int) error {
-	if id >= len(ts) {
+	tskDTOs, err := repo.GetAllIncomplete()
+	if err != nil {
+		return fmt.Errorf("failed to get all from repo: %s", err)
+	}
+
+	if id >= len(tskDTOs) {
 		return fmt.Errorf("invalid task id")
 	}
 
-	ts = append(ts[:id], ts[id+1:]...)
-	err := repo.Write(toTaskDTOs(ts))
+	tskDTOs[id].Complete = true
+	err = repo.Put(tskDTOs[id])
 	if err != nil {
-		return fmt.Errorf("failed to write to db: %s", err)
+		return fmt.Errorf("failed to put task in repo: %s", err)
 	}
 
 	return nil
-}
-
-func toTaskDTOs(ts []Task) []repo.TaskDTO {
-	tsDTOs := []repo.TaskDTO{}
-	for _, t := range ts {
-		tDTO := repo.TaskDTO(t)
-		tsDTOs = append(tsDTOs, tDTO)
-	}
-
-	return tsDTOs
 }
 
 func toTasks(tsDTOs []repo.TaskDTO) []Task {
