@@ -69,6 +69,26 @@ func Do(id int) error {
 	return nil
 }
 
+// Remove deletes a given task from the tasks list.
+// It returns an error in case of an invalid task id or a problem with the repository.
+func Remove(id int) error {
+	tskDTOs, err := repo.GetAllIncomplete()
+	if err != nil {
+		return fmt.Errorf("failed to get all from repo: %s", err)
+	}
+
+	if id >= len(tskDTOs) {
+		return fmt.Errorf("invalid task id")
+	}
+
+	err = repo.Delete(tskDTOs[id])
+	if err != nil {
+		return fmt.Errorf("failed to delete task from repo: %s", err)
+	}
+
+	return nil
+}
+
 func toTasks(tsDTOs []repo.TaskDTO) []Task {
 	ts := []Task{}
 	for _, tDTO := range tsDTOs {

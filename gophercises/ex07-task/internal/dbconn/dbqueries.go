@@ -85,6 +85,28 @@ func (dbc *DBConnection) Put(bucket []byte, key []byte, data []byte) error {
 	})
 }
 
+// Delete creates a new record in the bucket by adding the provided data.
+// In case of no open connection or an issue with reading bucket or adding value, an error is returned.
+func (dbc *DBConnection) Delete(bucket []byte, key []byte) error {
+	if dbc.connection == nil {
+		return fmt.Errorf("connection not open")
+	}
+
+	return dbc.connection.Update(func(tx *bolt.Tx) error {
+		bk := tx.Bucket(bucket)
+		if bk == nil {
+			return fmt.Errorf("failed to read bucket %s", bucket)
+		}
+
+		err := bk.Delete(key)
+		if err != nil {
+			return fmt.Errorf("failed to delete value for key %s: %s", key, err)
+		}
+
+		return nil
+	})
+}
+
 // ForEach iterates over all records in provided bucket, and invokes callback(record).
 // In case of no open connection or an issue with reading bucket or values, an error is returned.
 func (dbc *DBConnection) ForEach(bucket []byte, callback func(val []byte) error) error {

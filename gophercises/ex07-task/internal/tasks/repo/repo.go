@@ -141,6 +141,32 @@ func Put(tsk TaskDTO) error {
 	return nil
 }
 
+// Delete the provided TaskDTO from the db.
+// It returns an error in case of an issue with provided data or db.
+func Delete(tsk TaskDTO) error {
+	if !dbConnection.DBExists() {
+		return fmt.Errorf("database not found")
+	}
+
+	err := dbConnection.Open()
+	if err != nil {
+		return fmt.Errorf("failed to open connection to db: %s", err)
+	}
+	defer func() {
+		err := dbConnection.Close()
+		if err != nil {
+			log.Fatalf("failed to close connection to db: %s", err)
+		}
+	}()
+
+	err = dbConnection.Delete(tasksBucket, tsk.ID)
+	if err != nil {
+		return fmt.Errorf("failed to delete value from db: %s", err)
+	}
+
+	return nil
+}
+
 func getAllWithStatus(completionStatus bool) ([]TaskDTO, error) {
 	if !dbConnection.DBExists() {
 		return nil, fmt.Errorf("database not found")

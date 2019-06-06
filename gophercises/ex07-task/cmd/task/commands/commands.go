@@ -65,6 +65,19 @@ var doCmd = &cobra.Command{
 	},
 }
 
+var rmCmd = &cobra.Command{
+	Use:   "rm",
+	Short: "removes a given task from the tasks list",
+	Args:  requiresOneIntegerArg(),
+	Run: func(cmd *cobra.Command, args []string) {
+		id, _ := strconv.Atoi(args[0])
+		err := tasks.Remove(id)
+		if err != nil {
+			log.Fatalf("failed to remove task: %s", err)
+		}
+	},
+}
+
 var addCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Adds a new TODO list item",
@@ -84,6 +97,7 @@ func init() {
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(completedCmd)
 	rootCmd.AddCommand(doCmd)
+	rootCmd.AddCommand(rmCmd)
 	rootCmd.AddCommand(addCmd)
 }
 
