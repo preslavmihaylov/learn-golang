@@ -9,14 +9,13 @@ import (
 )
 
 // DBExists checks if the database exists.
-// It returns an error in case there is an issue with reading the database info from the filesystem.
-func DBExists() bool {
-	if _, err := os.Stat(dbFilename); err != nil {
+func (dbc *DBConnection) DBExists() bool {
+	if _, err := os.Stat(dbc.filename); err != nil {
 		switch {
 		case os.IsNotExist(err):
 			return false
 		default:
-			log.Fatalf("dbconn.DBExists received unexpected error when reading db: %s", err)
+			log.Fatalf("received unexpected error when reading db: %s", err)
 		}
 	}
 
@@ -26,34 +25,33 @@ func DBExists() bool {
 // CreateDB creates a new empty database.
 // In case of an issue with removing old database or creating a new one, an error is returned.
 // In case of failing to close db connection, a panic occurs.
-func CreateDB() error {
-	err := RemoveDB()
+func (dbc *DBConnection) CreateDB() error {
+	err := dbc.RemoveDB()
 	if err != nil {
-		return fmt.Errorf("dbconn.CreateDB failed to remove existing db: %s", err)
+		return fmt.Errorf("failed to remove existing db: %s", err)
 	}
 
-	db, err := bolt.Open(dbFilename, dbPermissions, nil)
+	db, err := bolt.Open(dbc.filename, dbc.perms, nil)
 	if err != nil {
-		return fmt.Errorf("dbconn.CreateDB failed to create new db: %s", err)
+		return fmt.Errorf("failed to create new db: %s", err)
 	}
 	defer func() {
 		err := db.Close()
 		if err != nil {
-			log.Fatalf("dbconn.CreateDB failed closing database: %s", err)
+			log.Fatalf("failed closing database: %s", err)
 		}
 	}()
 
 	return nil
 }
 
-// RemoveDB removes the existing database.
-// If no database exists, it returns nil.
-// In case of an error with removing old database, an error is returned.
-func RemoveDB() error {
-	if DBExists() {
-		err := os.Remove(dbFilename)
+// RemoveDB removes the existing database or does nothing if db doesn't exist.
+// In case of an issue with removing old database, an error is returned.
+func (dbc *DBConnection) RemoveDB() error {
+	if dbc.DBExists() {
+		err := os.Remove(dbc.filename)
 		if err != nil {
-			return fmt.Errorf("dbconn.RemoveDB failed to remove old db: %s", err)
+			return fmt.Errorf("failed to remove old db: %s", err)
 		}
 	}
 

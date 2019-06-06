@@ -16,7 +16,7 @@ func New(desc string) *Task {
 }
 
 // Add adds the provided task to the tasks list.
-// It returns an error in case of a problem with the db.
+// It returns an error in case of a problem with the repository.
 func Add(task *Task) error {
 	err := repo.Add(repo.TaskDTO(*task))
 	if err != nil {
@@ -26,8 +26,9 @@ func Add(task *Task) error {
 	return nil
 }
 
-// List returns the currently active tasks
-func List() ([]Task, error) {
+// ListIncomplete returns the currently incomplete tasks.
+// It returns an error if an issue with reading tasks from repository occurs.
+func ListIncomplete() ([]Task, error) {
 	tskDTOs, err := repo.GetAllIncomplete()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all tasks from repo: %s", err)
@@ -36,8 +37,19 @@ func List() ([]Task, error) {
 	return toTasks(tskDTOs), nil
 }
 
+// ListComplete returns the tasks which are complete.
+// It returns an error if an issue with reading tasks from repository occurs.
+func ListComplete() ([]Task, error) {
+	tskDTOs, err := repo.GetAllComplete()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all tasks from repo: %s", err)
+	}
+
+	return toTasks(tskDTOs), nil
+}
+
 // Do marks a given task complete, given its id.
-// It returns an error in case of an invalid task id or a problem with the db.
+// It returns an error in case of an invalid task id or a problem with the repository.
 func Do(id int) error {
 	tskDTOs, err := repo.GetAllIncomplete()
 	if err != nil {

@@ -23,12 +23,29 @@ var listCmd = &cobra.Command{
 	Short: "lists the currently active tasks in your TODO list",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		tsks, err := tasks.List()
+		tsks, err := tasks.ListIncomplete()
 		if err != nil {
 			log.Fatalf("list cmd failed with error: %s", err)
 		}
 
 		fmt.Println("You have the following tasks:")
+		for i, t := range tsks {
+			fmt.Printf("%d. %s\n", i, t.Desc)
+		}
+	},
+}
+
+var completedCmd = &cobra.Command{
+	Use:   "completed",
+	Short: "lists the completed tasks in your TODO list",
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		tsks, err := tasks.ListComplete()
+		if err != nil {
+			log.Fatalf("completed cmd failed with error: %s", err)
+		}
+
+		fmt.Println("You have completed the following tasks:")
 		for i, t := range tsks {
 			fmt.Printf("%d. %s\n", i, t.Desc)
 		}
@@ -65,6 +82,7 @@ var addCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(completedCmd)
 	rootCmd.AddCommand(doCmd)
 	rootCmd.AddCommand(addCmd)
 }
