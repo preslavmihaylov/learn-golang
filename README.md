@@ -5,3 +5,4 @@ This repo contains my solutions to exercises of various Golang courses I've comp
 Courses include:
  * [Learn How To Code: Google's Go (golang) Programming Language](https://www.udemy.com/course/learn-how-to-code/)
  * [gophercises](https://gophercises.com/)
+ * [Web Development with Go](https://usegolang.com/)
