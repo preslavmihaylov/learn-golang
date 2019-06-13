@@ -14,18 +14,22 @@ type View struct {
 }
 
 var (
-	layoutsDir    = "views/layouts"
+	viewsDir      = "views/"
+	layoutsDir    = viewsDir + "layouts/"
 	tmplExtension = ".gohtml"
 )
 
 func NewView(layout string, files ...string) *View {
-	layouts, err := filepath.Glob(layoutsDir + "/*" + tmplExtension)
+	layouts, err := filepath.Glob(layoutsDir + "*" + tmplExtension)
 	if err != nil {
 		log.Fatalf("failed globbing for layouts: %s", err)
 	}
 
-	files = append(files, layouts...)
+	for i, _ := range files {
+		files[i] = viewsDir + files[i] + tmplExtension
+	}
 
+	files = append(files, layouts...)
 	t, err := template.ParseFiles(files...)
 	if err != nil {
 		log.Fatalf("failed to create view: %s", err)
@@ -44,4 +48,11 @@ func (v *View) Render(w http.ResponseWriter, data interface{}) error {
 	}
 
 	return nil
+}
+
+func (v *View) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	err := v.Render(w, nil)
+	if err != nil {
+		log.Fatalf("failed to serve http: %s", err)
+	}
 }
