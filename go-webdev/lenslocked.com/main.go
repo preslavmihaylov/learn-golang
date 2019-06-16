@@ -7,10 +7,38 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/controllers"
+	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/models"
+)
+
+var (
+	host     = "localhost"
+	port     = 5432
+	user     = "postgres"
+	password = "developer"
+	dbname   = "lenslocked_dev"
 )
 
 func main() {
-	usersC := controllers.NewUsers()
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+
+	usersS, err := models.NewUserService(psqlInfo)
+	if err != nil {
+		log.Fatalf("failed to create users service: %s", err)
+	}
+	defer func() {
+		err := usersS.Close()
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	err = usersS.AutoMigrate()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	usersC := controllers.NewUsers(usersS)
 	staticC := controllers.NewStatic()
 
 	r := mux.NewRouter()
@@ -24,7 +52,7 @@ func main() {
 	r.HandleFunc("/signup", usersC.Create).Methods("POST")
 
 	fmt.Println("Listening on port 8080...")
-	err := http.ListenAndServe(":8080", r)
+	err = http.ListenAndServe(":8080", r)
 	if err != nil {
 		log.Fatal(err)
 	}
