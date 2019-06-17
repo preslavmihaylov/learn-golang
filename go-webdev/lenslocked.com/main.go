@@ -48,8 +48,11 @@ func main() {
 	r.Handle("/contacts", staticC.ContactsView).Methods("GET")
 	r.Handle("/faq", staticC.FAQView).Methods("GET")
 
-	r.HandleFunc("/signup", usersC.New).Methods("GET")
+	r.Handle("/signup", usersC.NewView).Methods("GET")
+	r.Handle("/login", usersC.LoginView).Methods("GET")
+
 	r.HandleFunc("/signup", usersC.Create).Methods("POST")
+	r.HandleFunc("/login", usersC.Login).Methods("POST")
 
 	fmt.Println("Listening on port 8080...")
 	err = http.ListenAndServe(":8080", r)

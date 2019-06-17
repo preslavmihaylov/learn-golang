@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/models"
@@ -10,8 +9,9 @@ import (
 )
 
 type Users struct {
-	NewView *views.View
-	service *models.UserService
+	NewView   *views.View
+	LoginView *views.View
+	service   *models.UserService
 }
 
 type SignupForm struct {
@@ -20,20 +20,16 @@ type SignupForm struct {
 	Password string `schema:"password"`
 }
 
-func NewUsers(us *models.UserService) *Users {
-	return &Users{
-		NewView: views.NewView("bootstrap", "users/new"),
-		service: us,
-	}
+type LoginForm struct {
+	Email    string `schema:"email"`
+	Password string `schema:"password"`
 }
 
-func (uc *Users) New(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	err := uc.NewView.Render(w, nil)
-	if err != nil {
-		log.Printf("failed to render template: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+func NewUsers(us *models.UserService) *Users {
+	return &Users{
+		NewView:   views.NewView("bootstrap", "users/new"),
+		LoginView: views.NewView("bootstrap", "users/login"),
+		service:   us,
 	}
 }
 
@@ -46,8 +42,9 @@ func (uc *Users) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	usr := models.User{
-		Name:  form.Name,
-		Email: form.Email,
+		Name:     form.Name,
+		Email:    form.Email,
+		Password: form.Password,
 	}
 
 	err = uc.service.Create(&usr)
@@ -56,5 +53,29 @@ func (uc *Users) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintln(w, form)
+	fmt.Fprintln(w, "You have signed up successfully")
+}
+
+func (uc *Users) Login(w http.ResponseWriter, r *http.Request) {
+	lform := LoginForm{}
+	err := parseForm(r, &lform)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	usr, err := uc.service.Authenticate(lform.Email, lform.Password)
+	if err != nil {
+		switch err {
+		case models.ErrUserNotFound:
+			http.Error(w, "No such user exists", http.StatusBadRequest)
+		case models.ErrWrongPassword:
+			http.Error(w, "provided password is incorrect", http.StatusBadRequest)
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	fmt.Fprintf(w, "User(%s %s)", usr.Name, usr.Email)
 }

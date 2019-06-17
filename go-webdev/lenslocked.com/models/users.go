@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/jinzhu/gorm"
 
 	// preload postgres driver
@@ -11,14 +13,20 @@ import (
 )
 
 var (
-	ErrNotFound  = errors.New("models: resource not found")
-	ErrInvalidID = errors.New("models: invalid id")
+	ErrNotFound      = errors.New("models: resource not found")
+	ErrInvalidID     = errors.New("models: invalid id")
+	ErrUserNotFound  = errors.New("models: user not found")
+	ErrWrongPassword = errors.New("models: wrong password")
 )
+
+var userPwPepper = "some-pepper"
 
 type User struct {
 	gorm.Model
-	Name  string
-	Email string `gorm:"unique_index"`
+	Name         string
+	Email        string `gorm:"not null;unique_index"`
+	Password     string `gorm:"-"`
+	PasswordHash string `gorm:"not null"`
 }
 
 type UserService struct {
@@ -65,7 +73,12 @@ func (us *UserService) ByEmail(email string) (*User, error) {
 }
 
 func (us *UserService) Create(u *User) error {
-	err := us.db.Create(u).Error
+	err := u.hashPassword()
+	if err != nil {
+		return err
+	}
+
+	err = us.db.Create(u).Error
 	if err != nil {
 		return fmt.Errorf("failed to create user: %s", err)
 	}
@@ -112,6 +125,24 @@ func (us *UserService) DestructiveReset() error {
 	return nil
 }
 
+func (us *UserService) Authenticate(email, password string) (*User, error) {
+	usr, err := us.ByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+
+	isPassCorrect, err := usr.isPasswordCorrect(password)
+	if err != nil {
+		return nil, err
+	}
+
+	if !isPassCorrect {
+		return nil, ErrWrongPassword
+	}
+
+	return usr, nil
+}
+
 func first(db *gorm.DB, dst interface{}) error {
 	err := db.First(dst).Error
 	if err != nil {
@@ -124,4 +155,30 @@ func first(db *gorm.DB, dst interface{}) error {
 	}
 
 	return nil
+}
+
+func (u *User) hashPassword() error {
+	phashBytes, err := bcrypt.GenerateFromPassword([]byte(userPwPepper+u.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash user password: %s", err)
+	}
+
+	u.Password = ""
+	u.PasswordHash = string(phashBytes)
+
+	return nil
+}
+
+func (u *User) isPasswordCorrect(password string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(userPwPepper+password))
+	if err != nil {
+		switch err {
+		case bcrypt.ErrMismatchedHashAndPassword:
+			return false, nil
+		default:
+			return false, fmt.Errorf("failed comparing password hashes: %s", err)
+		}
+	}
+
+	return true, nil
 }
