@@ -25,7 +25,7 @@ func NewView(layout string, files ...string) *View {
 		log.Fatalf("failed globbing for layouts: %s", err)
 	}
 
-	for i, _ := range files {
+	for i := range files {
 		files[i] = viewsDir + files[i] + tmplExtension
 	}
 
