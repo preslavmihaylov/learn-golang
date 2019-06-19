@@ -33,6 +33,7 @@ func main() {
 		}
 	}()
 
+	// _ = usersS.DestructiveReset()
 	err = usersS.AutoMigrate()
 	if err != nil {
 		log.Fatal(err)
@@ -51,6 +52,7 @@ func main() {
 	r.Handle("/signup", usersC.NewView).Methods("GET")
 	r.Handle("/login", usersC.LoginView).Methods("GET")
 
+	r.HandleFunc("/cookietest", usersC.CookieTest).Methods("GET")
 	r.HandleFunc("/signup", usersC.Create).Methods("POST")
 	r.HandleFunc("/login", usersC.Login).Methods("POST")
 

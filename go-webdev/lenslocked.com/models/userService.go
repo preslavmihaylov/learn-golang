@@ -1,36 +1,16 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 
-	"golang.org/x/crypto/bcrypt"
-
 	"github.com/jinzhu/gorm"
-
-	// preload postgres driver
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/hash"
+	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/rand"
 )
-
-var (
-	ErrNotFound      = errors.New("models: resource not found")
-	ErrInvalidID     = errors.New("models: invalid id")
-	ErrUserNotFound  = errors.New("models: user not found")
-	ErrWrongPassword = errors.New("models: wrong password")
-)
-
-var userPwPepper = "some-pepper"
-
-type User struct {
-	gorm.Model
-	Name         string
-	Email        string `gorm:"not null;unique_index"`
-	Password     string `gorm:"-"`
-	PasswordHash string `gorm:"not null"`
-}
 
 type UserService struct {
-	db *gorm.DB
+	db   *gorm.DB
+	hmac hash.HMAC
 }
 
 func NewUserService(connInfo string) (*UserService, error) {
@@ -40,7 +20,8 @@ func NewUserService(connInfo string) (*UserService, error) {
 	}
 
 	db.LogMode(true)
-	return &UserService{db: db}, nil
+	hmac := hash.NewHMAC(hmacSecretKey)
+	return &UserService{db: db, hmac: hmac}, nil
 }
 
 func (us *UserService) AutoMigrate() error {
@@ -72,10 +53,39 @@ func (us *UserService) ByEmail(email string) (*User, error) {
 	return &u, nil
 }
 
+func (us *UserService) ByRememberToken(token string) (*User, error) {
+	rememberHash, err := us.hmac.Hash(token)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash remember token: %s", err)
+	}
+
+	var u User
+	err = first(us.db.Where("remember_hash = ?", rememberHash), &u)
+	if err != nil {
+		return nil, err
+	}
+
+	return &u, nil
+}
+
 func (us *UserService) Create(u *User) error {
 	err := u.hashPassword()
 	if err != nil {
 		return err
+	}
+
+	if u.Remember == "" {
+		tok, err := rand.RememberToken()
+		if err != nil {
+			return fmt.Errorf("failed to create remember token for user: %s", err)
+		}
+
+		u.Remember = tok
+	}
+
+	err = u.hashRememberToken(us.hmac)
+	if err != nil {
+		return fmt.Errorf("failed to hash remember token: %s", err)
 	}
 
 	err = us.db.Create(u).Error
@@ -87,7 +97,12 @@ func (us *UserService) Create(u *User) error {
 }
 
 func (us *UserService) Update(u *User) error {
-	err := us.db.Save(u).Error
+	err := u.hashRememberToken(us.hmac)
+	if err != nil {
+		return fmt.Errorf("failed to hash remember token: %s", err)
+	}
+
+	err = us.db.Save(u).Error
 	if err != nil {
 		return fmt.Errorf("failed to update user: %s", err)
 	}
@@ -155,30 +170,4 @@ func first(db *gorm.DB, dst interface{}) error {
 	}
 
 	return nil
-}
-
-func (u *User) hashPassword() error {
-	phashBytes, err := bcrypt.GenerateFromPassword([]byte(userPwPepper+u.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return fmt.Errorf("failed to hash user password: %s", err)
-	}
-
-	u.Password = ""
-	u.PasswordHash = string(phashBytes)
-
-	return nil
-}
-
-func (u *User) isPasswordCorrect(password string) (bool, error) {
-	err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(userPwPepper+password))
-	if err != nil {
-		switch err {
-		case bcrypt.ErrMismatchedHashAndPassword:
-			return false, nil
-		default:
-			return false, fmt.Errorf("failed comparing password hashes: %s", err)
-		}
-	}
-
-	return true, nil
 }
