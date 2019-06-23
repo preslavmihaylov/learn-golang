@@ -3,6 +3,7 @@ package rand
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 )
 
 const tokenSize = 32
@@ -18,6 +19,15 @@ func String(nBytes int) (string, error) {
 	}
 
 	return base64.URLEncoding.EncodeToString(b), nil
+}
+
+func NBytes(base64str string) (int, error) {
+	bs, err := base64.URLEncoding.DecodeString(base64str)
+	if err != nil {
+		return -1, fmt.Errorf("failed to decode string: %s", err)
+	}
+
+	return len(bs), nil
 }
 
 func randBytes(n int) ([]byte, error) {

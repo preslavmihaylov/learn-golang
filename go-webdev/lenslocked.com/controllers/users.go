@@ -11,7 +11,7 @@ import (
 type Users struct {
 	NewView   *views.View
 	LoginView *views.View
-	service   *models.UserService
+	service   models.UserService
 }
 
 type SignupForm struct {
@@ -25,7 +25,7 @@ type LoginForm struct {
 	Password string `schema:"password"`
 }
 
-func NewUsers(us *models.UserService) *Users {
+func NewUsers(us models.UserService) *Users {
 	return &Users{
 		NewView:   views.NewView("bootstrap", "users/new"),
 		LoginView: views.NewView("bootstrap", "users/login"),
@@ -51,7 +51,7 @@ func (uc *Users) CookieTest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	fmt.Fprintln(w, usr.Remember)
+	fmt.Fprintln(w, usr.RememberToken)
 }
 
 func (uc *Users) Create(w http.ResponseWriter, r *http.Request) {
@@ -96,7 +96,7 @@ func (uc *Users) Login(w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case models.ErrUserNotFound:
 			http.Error(w, "No such user exists", http.StatusBadRequest)
-		case models.ErrWrongPassword:
+		case models.ErrPasswordWrong:
 			http.Error(w, "provided password is incorrect", http.StatusBadRequest)
 		default:
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -124,7 +124,7 @@ func (uc *Users) signIn(w http.ResponseWriter, u *models.User) error {
 		return fmt.Errorf("failed to update user: %s", err)
 	}
 
-	cookie := http.Cookie{Name: "remember_token", Value: u.Remember, HttpOnly: true}
+	cookie := http.Cookie{Name: "remember_token", Value: u.RememberToken, HttpOnly: true}
 	http.SetCookie(w, &cookie)
 
 	return nil
