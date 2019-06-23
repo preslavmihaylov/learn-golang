@@ -51,14 +51,17 @@ func (uc *Users) CookieTest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	fmt.Fprintln(w, usr.RememberToken)
+	fmt.Fprintln(w, usr)
 }
 
 func (uc *Users) Create(w http.ResponseWriter, r *http.Request) {
+	var viewData views.Data
+
 	form := SignupForm{}
 	err := parseForm(r, &form)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		viewData.SetAlert(err)
+		uc.NewView.Render(w, viewData)
 		return
 	}
 
@@ -70,13 +73,14 @@ func (uc *Users) Create(w http.ResponseWriter, r *http.Request) {
 
 	err = uc.service.Create(&usr)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		viewData.SetAlert(err)
+		uc.NewView.Render(w, viewData)
 		return
 	}
 
 	err = uc.signIn(w, &usr)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 
@@ -84,10 +88,13 @@ func (uc *Users) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (uc *Users) Login(w http.ResponseWriter, r *http.Request) {
+	var viewData views.Data
+
 	lform := LoginForm{}
 	err := parseForm(r, &lform)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		viewData.SetAlert(err)
+		uc.LoginView.Render(w, viewData)
 		return
 	}
 
@@ -95,18 +102,19 @@ func (uc *Users) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err {
 		case models.ErrUserNotFound:
-			http.Error(w, "No such user exists", http.StatusBadRequest)
-		case models.ErrPasswordWrong:
-			http.Error(w, "provided password is incorrect", http.StatusBadRequest)
+			viewData.AlertError("No user exists with that email address")
 		default:
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			viewData.SetAlert(err)
 		}
+
+		uc.LoginView.Render(w, viewData)
 		return
 	}
 
 	err = uc.signIn(w, usr)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		viewData.SetAlert(err)
+		uc.LoginView.Render(w, viewData)
 		return
 	}
 

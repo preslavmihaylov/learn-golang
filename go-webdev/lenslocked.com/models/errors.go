@@ -1,16 +1,32 @@
 package models
 
-import "errors"
+import (
+	"strings"
+)
 
 var (
-	ErrIDInvalid             = errors.New("models: invalid id")
-	ErrUserNotFound          = errors.New("models: user not found")
-	ErrPasswordWrong         = errors.New("models: wrong password")
-	ErrPasswordTooShort      = errors.New("models: password too short. Must be at least 8 characters long")
-	ErrPasswordRequired      = errors.New("models: password is required")
-	ErrEmailRequired         = errors.New("models: email required")
-	ErrEmailInvalid          = errors.New("models: invalid email")
-	ErrEmailTaken            = errors.New("models: email is taken")
-	ErrRememberTokenTooShort = errors.New("models: remember token is too short")
-	ErrRememberTokenRequired = errors.New("models: remember token is required")
+	ErrIDInvalid             modelError = "models: invalid id"
+	ErrUserNotFound          modelError = "models: user not found"
+	ErrPasswordWrong         modelError = "models: wrong password"
+	ErrPasswordTooShort      modelError = "models: password too short. Must be at least 8 characters long"
+	ErrPasswordRequired      modelError = "models: password is required"
+	ErrEmailRequired         modelError = "models: email required"
+	ErrEmailInvalid          modelError = "models: invalid email"
+	ErrEmailTaken            modelError = "models: email is taken"
+	ErrRememberTokenTooShort modelError = "models: remember token is too short"
+	ErrRememberTokenRequired modelError = "models: remember token is required"
 )
+
+type modelError string
+
+func (e modelError) Error() string {
+	return string(e)
+}
+
+func (e modelError) Public() string {
+	s := strings.Replace(string(e), "models: ", "", 1)
+	split := strings.Split(s, " ")
+	split[0] = strings.Title(split[0])
+
+	return strings.Join(split, " ")
+}

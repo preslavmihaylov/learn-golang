@@ -1,8 +1,9 @@
 package views
 
 import (
-	"fmt"
+	"bytes"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -41,18 +42,26 @@ func NewView(layout string, files ...string) *View {
 	}
 }
 
-func (v *View) Render(w http.ResponseWriter, data interface{}) error {
-	err := v.tmpl.ExecuteTemplate(w, v.layout, data)
-	if err != nil {
-		return fmt.Errorf("failed to render view: %s", err)
+func (v *View) Render(w http.ResponseWriter, data interface{}) {
+	switch data.(type) {
+	case Data:
+		// do nothing
+	default:
+		data = Data{Yield: data}
 	}
 
-	return nil
+	var buf bytes.Buffer
+	err := v.tmpl.ExecuteTemplate(&buf, v.layout, data)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Something went wrong. If the problem persists, "+
+			"please email support@lenslocked.com", http.StatusInternalServerError)
+		return
+	}
+
+	io.Copy(w, &buf)
 }
 
 func (v *View) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	err := v.Render(w, nil)
-	if err != nil {
-		log.Fatalf("failed to serve http: %s", err)
-	}
+	v.Render(w, nil)
 }
