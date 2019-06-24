@@ -1,7 +1,7 @@
 package models
 
 import (
-	"fmt"
+	"github.com/jinzhu/gorm"
 )
 
 type UserService interface {
@@ -13,15 +13,11 @@ type userService struct {
 	UserDB
 }
 
-func NewUserService(connInfo string) (UserService, error) {
-	ug, err := newUserGorm(connInfo)
-	if err != nil {
-		return nil, fmt.Errorf("failed to instantiate user gorm: %s", err)
-	}
-
+func NewUserService(db *gorm.DB) UserService {
+	ug := userGorm{db}
 	return &userService{
-		UserDB: NewUserValidator(ug),
-	}, nil
+		UserDB: NewUserValidator(&ug),
+	}
 }
 
 func (us *userService) Authenticate(email, password string) (*User, error) {

@@ -12,8 +12,6 @@ type userValidator struct {
 	emailRegex *regexp.Regexp
 }
 
-type userValidationFunc func(u *User) error
-
 func NewUserValidator(userDB UserDB) *userValidator {
 	return &userValidator{
 		UserDB:     userDB,

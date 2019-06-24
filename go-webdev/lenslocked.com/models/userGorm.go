@@ -14,25 +14,10 @@ type UserDB interface {
 	Create(user *User) error
 	Update(user *User) error
 	Delete(id uint) error
-
-	Close() error
-
-	AutoMigrate() error
-	DestructiveReset() error
 }
 
 type userGorm struct {
 	db *gorm.DB
-}
-
-func newUserGorm(connInfo string) (*userGorm, error) {
-	db, err := gorm.Open("postgres", connInfo)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open db connection: %s", err)
-	}
-
-	db.LogMode(true)
-	return &userGorm{db: db}, nil
 }
 
 func (ug *userGorm) ByID(id uint) (*User, error) {
@@ -88,31 +73,6 @@ func (ug *userGorm) Delete(id uint) error {
 	err := ug.db.Delete(&delUsr).Error
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %s", err)
-	}
-
-	return nil
-}
-
-func (ug *userGorm) Close() error {
-	return ug.db.Close()
-}
-
-func (ug *userGorm) AutoMigrate() error {
-	err := ug.db.AutoMigrate(&User{}).Error
-	if err != nil {
-		return fmt.Errorf("failed to setup auto-migrate on users table: %s", err)
-	}
-
-	return nil
-}
-
-func (ug *userGorm) DestructiveReset() error {
-	ug.db.DropTableIfExists(&User{})
-	ug.db.AutoMigrate(&User{})
-
-	err := ug.db.Error
-	if err != nil {
-		return fmt.Errorf("received error while recreating users table: %s", err)
 	}
 
 	return nil

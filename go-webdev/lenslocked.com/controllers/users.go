@@ -9,9 +9,9 @@ import (
 )
 
 type Users struct {
-	NewView   *views.View
-	LoginView *views.View
-	service   models.UserService
+	SignupView *views.View
+	LoginView  *views.View
+	service    models.UserService
 }
 
 type SignupForm struct {
@@ -27,9 +27,9 @@ type LoginForm struct {
 
 func NewUsers(us models.UserService) *Users {
 	return &Users{
-		NewView:   views.NewView("bootstrap", "users/new"),
-		LoginView: views.NewView("bootstrap", "users/login"),
-		service:   us,
+		SignupView: views.NewView("bootstrap", "users/signup"),
+		LoginView:  views.NewView("bootstrap", "users/login"),
+		service:    us,
 	}
 }
 
@@ -61,7 +61,7 @@ func (uc *Users) Create(w http.ResponseWriter, r *http.Request) {
 	err := parseForm(r, &form)
 	if err != nil {
 		viewData.SetAlert(err)
-		uc.NewView.Render(w, viewData)
+		uc.SignupView.Render(w, viewData)
 		return
 	}
 
@@ -74,7 +74,7 @@ func (uc *Users) Create(w http.ResponseWriter, r *http.Request) {
 	err = uc.service.Create(&usr)
 	if err != nil {
 		viewData.SetAlert(err)
-		uc.NewView.Render(w, viewData)
+		uc.SignupView.Render(w, viewData)
 		return
 	}
 

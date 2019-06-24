@@ -8,6 +8,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type userValidationFunc func(u *User) error
+
 func runUserValidationFuncs(u *User, fns ...userValidationFunc) error {
 	for _, fn := range fns {
 		err := fn(u)
