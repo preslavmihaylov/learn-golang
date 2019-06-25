@@ -27,7 +27,7 @@ func (mw *RequireUser) ApplyFunc(nextHandlerFunc http.HandlerFunc) http.HandlerF
 		usr, err := mw.UserService.ByRememberToken(c.Value)
 		if err != nil {
 			switch err {
-			case models.ErrUserNotFound:
+			case models.ErrNotFound:
 				http.Redirect(w, r, "/login", http.StatusFound)
 			default:
 				http.Error(w, err.Error(), http.StatusInternalServerError)

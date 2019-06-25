@@ -5,6 +5,8 @@ import (
 )
 
 var (
+	ErrNotFound modelError = "models: resource not found"
+
 	// User Errors
 	ErrIDInvalid             modelError = "models: invalid id"
 	ErrUserNotFound          modelError = "models: user not found"

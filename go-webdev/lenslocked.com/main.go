@@ -40,15 +40,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+	r := mux.NewRouter()
 	usersC := controllers.NewUsers(services.User)
-	galleriesC := controllers.NewGalleries(services.Gallery)
+	galleriesC := controllers.NewGalleries(services.Gallery, r)
 	staticC := controllers.NewStatic()
 
 	requireUserMw := middleware.RequireUser{
 		UserService: services.User,
 	}
 
-	r := mux.NewRouter()
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 
 	// static routes
@@ -66,9 +66,15 @@ func main() {
 	// galleries routes
 	newGallery := requireUserMw.Apply(galleriesC.NewView)
 	createGallery := requireUserMw.ApplyFunc(galleriesC.Create)
+	showGallery := requireUserMw.ApplyFunc(galleriesC.Show)
+	editGallery := requireUserMw.ApplyFunc(galleriesC.Edit)
+	updateGallery := requireUserMw.ApplyFunc(galleriesC.Update)
 
 	r.Handle("/galleries/new", newGallery).Methods("GET")
 	r.HandleFunc("/galleries", createGallery).Methods("POST")
+	r.HandleFunc("/galleries/{id:[0-9]+}", showGallery).Methods("GET").Name(controllers.ShowGalleryRoute)
+	r.HandleFunc("/galleries/{id:[0-9]+}/edit", editGallery).Methods("GET")
+	r.HandleFunc("/galleries/{id:[0-9]+}/update", updateGallery).Methods("POST")
 
 	fmt.Println("Listening on port 8080...")
 	err = http.ListenAndServe(":8080", r)

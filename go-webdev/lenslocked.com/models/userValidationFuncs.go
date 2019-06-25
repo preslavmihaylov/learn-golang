@@ -137,7 +137,7 @@ func (uv *userValidator) emailIsNotTaken(u *User) error {
 	foundUser, err := uv.ByEmail(u.Email)
 	if err != nil {
 		switch err {
-		case ErrUserNotFound:
+		case ErrNotFound:
 			return nil
 		default:
 			return err

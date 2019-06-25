@@ -83,7 +83,7 @@ func first(db *gorm.DB, dst interface{}) error {
 	if err != nil {
 		switch err {
 		case gorm.ErrRecordNotFound:
-			return ErrUserNotFound
+			return ErrNotFound
 		default:
 			return fmt.Errorf("unexpected error while querying db: %s", err)
 		}

@@ -101,7 +101,7 @@ func (uc *Users) Login(w http.ResponseWriter, r *http.Request) {
 	usr, err := uc.service.Authenticate(lform.Email, lform.Password)
 	if err != nil {
 		switch err {
-		case models.ErrUserNotFound:
+		case models.ErrNotFound:
 			viewData.AlertError("No user exists with that email address")
 		default:
 			viewData.SetAlert(err)
