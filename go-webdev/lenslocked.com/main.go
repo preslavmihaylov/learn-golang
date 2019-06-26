@@ -41,14 +41,15 @@ func main() {
 	}
 
 	r := mux.NewRouter()
+
 	usersC := controllers.NewUsers(services.User)
 	galleriesC := controllers.NewGalleries(services.Gallery, r)
 	staticC := controllers.NewStatic()
 
-	requireUserMw := middleware.RequireUser{
-		UserService: services.User,
-	}
+	userMw := middleware.User{UserService: services.User}
+	requireUserMw := middleware.RequireUser{}
 
+	r.Use(middleware.RequestLogger)
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 
 	// static routes
@@ -64,20 +65,30 @@ func main() {
 	r.HandleFunc("/login", usersC.Login).Methods("POST")
 
 	// galleries routes
+	indexGallery := requireUserMw.ApplyFunc(galleriesC.Index)
 	newGallery := requireUserMw.Apply(galleriesC.NewView)
 	createGallery := requireUserMw.ApplyFunc(galleriesC.Create)
 	showGallery := requireUserMw.ApplyFunc(galleriesC.Show)
 	editGallery := requireUserMw.ApplyFunc(galleriesC.Edit)
 	updateGallery := requireUserMw.ApplyFunc(galleriesC.Update)
+	deleteGallery := requireUserMw.ApplyFunc(galleriesC.Delete)
+
+	r.HandleFunc("/galleries", indexGallery).Methods("GET").
+		Name(controllers.IndexGalleriesRoute)
 
 	r.Handle("/galleries/new", newGallery).Methods("GET")
 	r.HandleFunc("/galleries", createGallery).Methods("POST")
-	r.HandleFunc("/galleries/{id:[0-9]+}", showGallery).Methods("GET").Name(controllers.ShowGalleryRoute)
-	r.HandleFunc("/galleries/{id:[0-9]+}/edit", editGallery).Methods("GET")
+	r.HandleFunc("/galleries/{id:[0-9]+}", showGallery).Methods("GET").
+		Name(controllers.ShowGalleryRoute)
+
+	r.HandleFunc("/galleries/{id:[0-9]+}/edit", editGallery).Methods("GET").
+		Name(controllers.EditGalleryRoute)
+
 	r.HandleFunc("/galleries/{id:[0-9]+}/update", updateGallery).Methods("POST")
+	r.HandleFunc("/galleries/{id:[0-9]+}/delete", deleteGallery).Methods("POST")
 
 	fmt.Println("Listening on port 8080...")
-	err = http.ListenAndServe(":8080", r)
+	err = http.ListenAndServe(":8080", userMw.Apply(r))
 	if err != nil {
 		log.Fatal(err)
 	}

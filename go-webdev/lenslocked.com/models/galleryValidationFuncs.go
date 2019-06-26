@@ -28,3 +28,13 @@ func (gv *galleryValidator) requireTitle(g *Gallery) error {
 
 	return nil
 }
+
+func (gv *galleryValidator) idGreaterThan(n uint) galleryValidationFunc {
+	return galleryValidationFunc(func(g *Gallery) error {
+		if g.ID <= n {
+			return ErrIDInvalid
+		}
+
+		return nil
+	})
+}

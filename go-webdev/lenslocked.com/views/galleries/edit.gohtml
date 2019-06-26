@@ -22,4 +22,8 @@
     </div>
     <button type="submit" class="btn btn-primary">Update</button>
 </form>
+
+<form action="/galleries/{{.ID}}/delete" method="POST">
+    <button type="submit" class="btn btn-danger">Delete</button>
+</form>
 {{end}}

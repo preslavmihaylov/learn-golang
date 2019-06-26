@@ -91,3 +91,17 @@ func first(db *gorm.DB, dst interface{}) error {
 
 	return nil
 }
+
+func all(db *gorm.DB, dst interface{}) error {
+	err := db.Find(dst).Error
+	if err != nil {
+		switch err {
+		case gorm.ErrRecordNotFound:
+			return ErrNotFound
+		default:
+			return fmt.Errorf("unexpected error while querying db: %s", err)
+		}
+	}
+
+	return nil
+}

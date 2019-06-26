@@ -17,6 +17,9 @@
         <li><a href="/">Home</a></li>
         <li><a href="/contacts">Contacts</a></li>
         <li><a href="/faq">FAQ</a></li>
+        {{if .User}}
+        <li><a href="/galleries">Galleries</a></li>
+        {{end}}
       </ul>
       <ul class="nav navbar-nav navbar-right">
         <li><a href="/login">Log In</a></li>

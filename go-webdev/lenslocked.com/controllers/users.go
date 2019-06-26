@@ -61,7 +61,7 @@ func (uc *Users) Create(w http.ResponseWriter, r *http.Request) {
 	err := parseForm(r, &form)
 	if err != nil {
 		viewData.SetAlert(err)
-		uc.SignupView.Render(w, viewData)
+		uc.SignupView.Render(w, r, viewData)
 		return
 	}
 
@@ -74,7 +74,7 @@ func (uc *Users) Create(w http.ResponseWriter, r *http.Request) {
 	err = uc.service.Create(&usr)
 	if err != nil {
 		viewData.SetAlert(err)
-		uc.SignupView.Render(w, viewData)
+		uc.SignupView.Render(w, r, viewData)
 		return
 	}
 
@@ -84,7 +84,7 @@ func (uc *Users) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/cookietest", http.StatusFound)
+	http.Redirect(w, r, "/galleries", http.StatusFound)
 }
 
 func (uc *Users) Login(w http.ResponseWriter, r *http.Request) {
@@ -94,7 +94,7 @@ func (uc *Users) Login(w http.ResponseWriter, r *http.Request) {
 	err := parseForm(r, &lform)
 	if err != nil {
 		viewData.SetAlert(err)
-		uc.LoginView.Render(w, viewData)
+		uc.LoginView.Render(w, r, viewData)
 		return
 	}
 
@@ -107,18 +107,18 @@ func (uc *Users) Login(w http.ResponseWriter, r *http.Request) {
 			viewData.SetAlert(err)
 		}
 
-		uc.LoginView.Render(w, viewData)
+		uc.LoginView.Render(w, r, viewData)
 		return
 	}
 
 	err = uc.signIn(w, usr)
 	if err != nil {
 		viewData.SetAlert(err)
-		uc.LoginView.Render(w, viewData)
+		uc.LoginView.Render(w, r, viewData)
 		return
 	}
 
-	http.Redirect(w, r, "/cookietest", http.StatusFound)
+	http.Redirect(w, r, "/galleries", http.StatusFound)
 }
 
 func (uc *Users) signIn(w http.ResponseWriter, u *models.User) error {

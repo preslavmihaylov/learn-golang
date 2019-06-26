@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+
+	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/context"
 )
 
 type View struct {
@@ -42,16 +44,22 @@ func NewView(layout string, files ...string) *View {
 	}
 }
 
-func (v *View) Render(w http.ResponseWriter, data interface{}) {
-	switch data.(type) {
+func (v *View) Render(w http.ResponseWriter, r *http.Request, data interface{}) {
+	var viewData Data
+	switch data := data.(type) {
 	case Data:
 		// do nothing
+		viewData = data
 	default:
-		data = Data{Yield: data}
+		viewData = Data{Yield: data}
 	}
 
+	ctx := r.Context()
+	usr := context.User(ctx)
+	viewData.User = usr
+
 	var buf bytes.Buffer
-	err := v.tmpl.ExecuteTemplate(&buf, v.layout, data)
+	err := v.tmpl.ExecuteTemplate(&buf, v.layout, viewData)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Something went wrong. If the problem persists, "+
@@ -63,5 +71,5 @@ func (v *View) Render(w http.ResponseWriter, data interface{}) {
 }
 
 func (v *View) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	v.Render(w, nil)
+	v.Render(w, r, nil)
 }
