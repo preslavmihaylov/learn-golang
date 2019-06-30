@@ -43,7 +43,7 @@ func main() {
 	r := mux.NewRouter()
 
 	usersC := controllers.NewUsers(services.User)
-	galleriesC := controllers.NewGalleries(services.Gallery, r)
+	galleriesC := controllers.NewGalleries(services.Gallery, services.Images, r)
 	staticC := controllers.NewStatic()
 
 	userMw := middleware.User{UserService: services.User}
@@ -72,6 +72,8 @@ func main() {
 	editGallery := requireUserMw.ApplyFunc(galleriesC.Edit)
 	updateGallery := requireUserMw.ApplyFunc(galleriesC.Update)
 	deleteGallery := requireUserMw.ApplyFunc(galleriesC.Delete)
+	imageUpload := requireUserMw.ApplyFunc(galleriesC.ImageUpload)
+	imageDelete := requireUserMw.ApplyFunc(galleriesC.ImageDelete)
 
 	r.HandleFunc("/galleries", indexGallery).Methods("GET").
 		Name(controllers.IndexGalleriesRoute)
@@ -86,6 +88,13 @@ func main() {
 
 	r.HandleFunc("/galleries/{id:[0-9]+}/update", updateGallery).Methods("POST")
 	r.HandleFunc("/galleries/{id:[0-9]+}/delete", deleteGallery).Methods("POST")
+
+	// images routes
+	r.HandleFunc("/galleries/{id:[0-9]+}/images", imageUpload).Methods("POST")
+	r.HandleFunc("/galleries/{id:[0-9]+}/images/{filename}/delete", imageDelete).Methods("POST")
+
+	imageHandler := http.FileServer(http.Dir("./images/"))
+	r.PathPrefix("/images/").Handler(http.StripPrefix("/images/", imageHandler))
 
 	fmt.Println("Listening on port 8080...")
 	err = http.ListenAndServe(":8080", userMw.Apply(r))
