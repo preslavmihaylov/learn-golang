@@ -2,18 +2,21 @@ package views
 
 import (
 	"bytes"
+	"errors"
 	"html/template"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"path/filepath"
 
+	"github.com/gorilla/csrf"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/context"
 )
 
 type View struct {
-	tmpl   *template.Template
-	layout string
+	Template *template.Template
+	layout   string
 }
 
 var (
@@ -33,14 +36,23 @@ func NewView(layout string, files ...string) *View {
 	}
 
 	files = append(files, layouts...)
-	t, err := template.ParseFiles(files...)
+	t, err := template.New("").Funcs(template.FuncMap{
+		"csrfField": func() (template.HTML, error) {
+			// this is a stubbed version of the function. It should be provided
+			// with an implementation before being invoked.
+			return "", errors.New("csrfField is not implemented")
+		},
+		"pathEscape": func(str string) string {
+			return url.PathEscape(str)
+		},
+	}).ParseFiles(files...)
 	if err != nil {
 		log.Fatalf("failed to create view: %s", err)
 	}
 
 	return &View{
-		tmpl:   t,
-		layout: layout,
+		Template: t,
+		layout:   layout,
 	}
 }
 
@@ -59,7 +71,15 @@ func (v *View) Render(w http.ResponseWriter, r *http.Request, data interface{}) 
 	viewData.User = usr
 
 	var buf bytes.Buffer
-	err := v.tmpl.ExecuteTemplate(&buf, v.layout, viewData)
+
+	csrfField := csrf.TemplateField(r)
+	tpl := v.Template.Funcs(template.FuncMap{
+		"csrfField": func() template.HTML {
+			return csrfField
+		},
+	})
+
+	err := tpl.ExecuteTemplate(&buf, v.layout, viewData)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Something went wrong. If the problem persists, "+

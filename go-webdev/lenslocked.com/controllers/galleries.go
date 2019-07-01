@@ -50,17 +50,17 @@ func NewGalleries(gs models.GalleryService, is models.ImageService, r *mux.Route
 }
 
 func (g *Galleries) Index(w http.ResponseWriter, r *http.Request) {
+	var viewData views.Data
 
 	loggedInUser := context.User(r.Context())
 	galleries, err := g.service.ByUserID(loggedInUser.ID)
 	if err != nil {
-		http.Error(w, "Something went wrong.", http.StatusInternalServerError)
+		viewData.SetAlert(err)
+		g.IndexView.Render(w, r, viewData)
 		return
 	}
 
-	var viewData views.Data
 	viewData.Yield = galleries
-
 	g.IndexView.Render(w, r, viewData)
 }
 func (g *Galleries) Create(w http.ResponseWriter, r *http.Request) {
@@ -99,6 +99,7 @@ func (g *Galleries) Create(w http.ResponseWriter, r *http.Request) {
 func (g *Galleries) Show(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
+		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
 
@@ -110,6 +111,7 @@ func (g *Galleries) Show(w http.ResponseWriter, r *http.Request) {
 func (g *Galleries) Edit(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
+		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
 
@@ -127,6 +129,7 @@ func (g *Galleries) Edit(w http.ResponseWriter, r *http.Request) {
 func (g *Galleries) Update(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
+		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
 
@@ -166,6 +169,7 @@ func (g *Galleries) Update(w http.ResponseWriter, r *http.Request) {
 func (g *Galleries) Delete(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
+		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
 
@@ -196,6 +200,7 @@ func (g *Galleries) Delete(w http.ResponseWriter, r *http.Request) {
 func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
+		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
 
@@ -232,17 +237,19 @@ func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	viewData.Alert = &views.Alert{
-		Level:   views.AlertLvlSuccess,
-		Message: "Images successfully uploaded!",
+	url, err := g.router.Get(EditGalleryRoute).URL("id", fmt.Sprintf("%v", gallery.ID))
+	if err != nil {
+		http.Redirect(w, r, "/galleries", http.StatusFound)
+		return
 	}
 
-	g.EditView.Render(w, r, viewData)
+	http.Redirect(w, r, url.Path, http.StatusFound)
 }
 
 func (g *Galleries) ImageDelete(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
+		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
 
@@ -280,19 +287,11 @@ func (g *Galleries) galleryByID(w http.ResponseWriter, r *http.Request) (*models
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		http.Error(w, "Invalid gallery ID", http.StatusNotFound)
 		return nil, err
 	}
 
 	gallery, err := g.service.ByID(uint(id))
 	if err != nil {
-		switch err {
-		case models.ErrNotFound:
-			http.Error(w, "Gallery not found", http.StatusNotFound)
-		default:
-			http.Error(w, "Whoops! Something went wrong", http.StatusInternalServerError)
-		}
-
 		return nil, err
 	}
 
@@ -302,5 +301,6 @@ func (g *Galleries) galleryByID(w http.ResponseWriter, r *http.Request) (*models
 	}
 
 	gallery.Images = images
+
 	return gallery, nil
 }

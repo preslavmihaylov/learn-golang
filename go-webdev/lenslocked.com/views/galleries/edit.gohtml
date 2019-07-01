@@ -37,6 +37,7 @@
 
 {{define "editGalleryForm"}}
 <form action="/galleries/{{.ID}}/update" method="POST" class="form-horizontal">
+    {{csrfField}}
     <div class="form-group">
         <label for="title" class="col-md-1 control-label">Title</label>
         <div class="col-md-10">
@@ -51,6 +52,7 @@
 
 {{define "deleteGalleryForm"}}
 <form action="/galleries/{{.ID}}/delete" method="POST" class="form-horizontal">
+    {{csrfField}}
     <div class="form-group">
         <div class="col-md-10 col-md-offset-1">
             <button type="submit" class="btn btn-danger">Delete</button>
@@ -61,6 +63,7 @@
 
 {{define "uploadImageForm"}}
 <form action="/galleries/{{.ID}}/images" method="POST" enctype="multipart/form-data" class="form-horizontal">
+    {{csrfField}}
     <div class="form-group">
         <label for="images" class="col-md-1 control-label">Add Images</label>
         <div class="col-md-10">
@@ -69,6 +72,13 @@
             <button type="submit" class="btn btn-default">Upload</button>
         </div>
     </div>
+</form>
+{{end}}
+
+{{define "deleteImageForm"}}
+<form action="/galleries/{{.GalleryID}}/images/{{pathEscape .Filename}}/delete" method="POST">
+    {{csrfField}}
+    <button type="submit" class="btn btn-default btn-delete">Delete</button>
 </form>
 {{end}}
 
@@ -83,20 +93,4 @@
         {{end}}
         </div>
     {{end}}
-
-    <style>
-        .thumbnail {
-            width: 100%;
-            margin-bottom: 6px;
-        }
-        .btn-delete {
-            margin-bottom: 6px;
-        }
-    </style>
-{{end}}
-
-{{define "deleteImageForm"}}
-<form action="/galleries/{{.GalleryID}}/images/{{.Filename}}/delete" method="POST">
-    <button type="submit" class="btn btn-default btn-delete">Delete</button>
-</form>
 {{end}}

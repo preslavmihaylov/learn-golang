@@ -21,10 +21,12 @@
         <li><a href="/galleries">Galleries</a></li>
         {{end}}
       </ul>
+      {{if not .User}}
       <ul class="nav navbar-nav navbar-right">
         <li><a href="/login">Log In</a></li>
         <li><a href="/signup">Sign Up</a></li>
       </ul>
+      {{end}}
     </div>
   </div>
 </nav>

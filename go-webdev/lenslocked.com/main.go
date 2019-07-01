@@ -5,10 +5,12 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/controllers"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/middleware"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/models"
+	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/rand"
 )
 
 var (
@@ -46,8 +48,17 @@ func main() {
 	galleriesC := controllers.NewGalleries(services.Gallery, services.Images, r)
 	staticC := controllers.NewStatic()
 
+	// middlewares
 	userMw := middleware.User{UserService: services.User}
 	requireUserMw := middleware.RequireUser{}
+
+	randBytes, err := rand.Bytes(32)
+	if err != nil {
+		log.Fatalf("Failed to generate random bytes: %s", err)
+	}
+
+	isProduction := false
+	csrfMw := csrf.Protect(randBytes, csrf.Secure(isProduction))
 
 	r.Use(middleware.RequestLogger)
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
@@ -68,7 +79,6 @@ func main() {
 	indexGallery := requireUserMw.ApplyFunc(galleriesC.Index)
 	newGallery := requireUserMw.Apply(galleriesC.NewView)
 	createGallery := requireUserMw.ApplyFunc(galleriesC.Create)
-	showGallery := requireUserMw.ApplyFunc(galleriesC.Show)
 	editGallery := requireUserMw.ApplyFunc(galleriesC.Edit)
 	updateGallery := requireUserMw.ApplyFunc(galleriesC.Update)
 	deleteGallery := requireUserMw.ApplyFunc(galleriesC.Delete)
@@ -80,7 +90,7 @@ func main() {
 
 	r.Handle("/galleries/new", newGallery).Methods("GET")
 	r.HandleFunc("/galleries", createGallery).Methods("POST")
-	r.HandleFunc("/galleries/{id:[0-9]+}", showGallery).Methods("GET").
+	r.HandleFunc("/galleries/{id:[0-9]+}", galleriesC.Show).Methods("GET").
 		Name(controllers.ShowGalleryRoute)
 
 	r.HandleFunc("/galleries/{id:[0-9]+}/edit", editGallery).Methods("GET").
@@ -93,11 +103,15 @@ func main() {
 	r.HandleFunc("/galleries/{id:[0-9]+}/images", imageUpload).Methods("POST")
 	r.HandleFunc("/galleries/{id:[0-9]+}/images/{filename}/delete", imageDelete).Methods("POST")
 
+	// file servers
 	imageHandler := http.FileServer(http.Dir("./images/"))
 	r.PathPrefix("/images/").Handler(http.StripPrefix("/images/", imageHandler))
 
+	assetHandler := http.FileServer(http.Dir("./assets/"))
+	r.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", assetHandler))
+
 	fmt.Println("Listening on port 8080...")
-	err = http.ListenAndServe(":8080", userMw.Apply(r))
+	err = http.ListenAndServe(":8080", csrfMw(userMw.Apply(r)))
 	if err != nil {
 		log.Fatal(err)
 	}

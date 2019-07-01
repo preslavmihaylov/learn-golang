@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/context"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/models"
@@ -13,6 +14,12 @@ type User struct {
 
 func (mw *User) ApplyFunc(nextHandlerFunc http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		if strings.HasPrefix(path, "/assets/") || strings.HasPrefix(path, "/images/") {
+			nextHandlerFunc(w, r)
+			return
+		}
+
 		c, err := r.Cookie("remember_token")
 		if err != nil {
 			switch err {
