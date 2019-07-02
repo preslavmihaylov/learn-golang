@@ -1,7 +1,10 @@
 package models
 
 import (
+	"fmt"
+
 	"github.com/jinzhu/gorm"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
@@ -11,12 +14,14 @@ type UserService interface {
 
 type userService struct {
 	UserDB
+	pepper string
 }
 
-func NewUserService(db *gorm.DB) UserService {
+func NewUserService(db *gorm.DB, pepper, hmacKey string) UserService {
 	ug := userGorm{db}
 	return &userService{
-		UserDB: NewUserValidator(&ug),
+		UserDB: NewUserValidator(&ug, pepper, hmacKey),
+		pepper: pepper,
 	}
 }
 
@@ -26,7 +31,7 @@ func (us *userService) Authenticate(email, password string) (*User, error) {
 		return nil, err
 	}
 
-	isPassCorrect, err := usr.isPasswordCorrect(password)
+	isPassCorrect, err := us.isPasswordCorrect(usr, password)
 	if err != nil {
 		return nil, err
 	}
@@ -36,4 +41,18 @@ func (us *userService) Authenticate(email, password string) (*User, error) {
 	}
 
 	return usr, nil
+}
+
+func (us *userService) isPasswordCorrect(usr *User, password string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword([]byte(usr.PasswordHash), []byte(us.pepper+password))
+	if err != nil {
+		switch err {
+		case bcrypt.ErrMismatchedHashAndPassword:
+			return false, nil
+		default:
+			return false, fmt.Errorf("failed comparing password hashes: %s", err)
+		}
+	}
+
+	return true, nil
 }

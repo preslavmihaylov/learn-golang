@@ -8,25 +8,70 @@ import (
 
 type Services struct {
 	Gallery GalleryService
-	Images  ImageService
+	Image   ImageService
 	User    UserService
 	db      *gorm.DB
 }
 
-func NewServices(connInfo string) (*Services, error) {
-	db, err := gorm.Open("postgres", connInfo)
-	if err != nil {
-		return nil, fmt.Errorf("failed to instantiate user gorm: %s", err)
+type ServicesConfigFunc func(*Services) error
+
+func NewServices(cfgFuncs ...ServicesConfigFunc) (*Services, error) {
+	var s Services
+	for _, cfgFunc := range cfgFuncs {
+		if err := cfgFunc(&s); err != nil {
+			return nil, err
+		}
 	}
 
-	db.LogMode(true)
+	return &s, nil
+}
 
-	return &Services{
-		Gallery: NewGalleryService(db),
-		Images:  NewImageService(),
-		User:    NewUserService(db),
-		db:      db,
-	}, nil
+func WithGorm(dialect, connectionInfo string) ServicesConfigFunc {
+	return func(s *Services) error {
+		var err error
+		s.db, err = gorm.Open(dialect, connectionInfo)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+}
+
+func WithLogMode(mode bool) ServicesConfigFunc {
+	return func(s *Services) error {
+		if s.db == nil {
+			return fmt.Errorf("database not set")
+		}
+
+		s.db.LogMode(mode)
+
+		return nil
+	}
+}
+
+func WithUserService(pepper, hmacKey string) ServicesConfigFunc {
+	return func(s *Services) error {
+		s.User = NewUserService(s.db, pepper, hmacKey)
+
+		return nil
+	}
+}
+
+func WithGalleryService() ServicesConfigFunc {
+	return func(s *Services) error {
+		s.Gallery = NewGalleryService(s.db)
+
+		return nil
+	}
+}
+
+func WithImageService() ServicesConfigFunc {
+	return func(s *Services) error {
+		s.Image = NewImageService()
+
+		return nil
+	}
 }
 
 func (s *Services) Close() error {

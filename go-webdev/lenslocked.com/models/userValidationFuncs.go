@@ -26,7 +26,7 @@ func (uv *userValidator) hashPassword(u *User) error {
 		return nil
 	}
 
-	phashBytes, err := bcrypt.GenerateFromPassword([]byte(userPwPepper+u.Password), bcrypt.DefaultCost)
+	phashBytes, err := bcrypt.GenerateFromPassword([]byte(uv.pepper+u.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("failed to hash user password: %s", err)
 	}

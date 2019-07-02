@@ -1,31 +1,34 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
+	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/config"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/controllers"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/middleware"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/models"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/rand"
 )
 
-var (
-	host     = "localhost"
-	port     = 5432
-	user     = "postgres"
-	password = "developer"
-	dbname   = "lenslocked_dev"
-)
-
 func main() {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+	var isProductionFlag bool
+	flag.BoolVar(&isProductionFlag, "prod", false, "Provide this flag in production. It ensures that "+
+		"a config file is provided before the application starts.")
+	flag.Parse()
 
-	services, err := models.NewServices(psqlInfo)
+	cfg := config.LoadConfig(isProductionFlag)
+
+	services, err := models.NewServices(
+		models.WithGorm(cfg.Database.Dialect(), cfg.Database.ConnectionInfo()),
+		models.WithLogMode(!cfg.Server.IsProduction()),
+		models.WithUserService(cfg.Server.Pepper, cfg.Server.HMACKey),
+		models.WithGalleryService(),
+		models.WithImageService())
 	if err != nil {
 		log.Fatalf("failed to create users service: %s", err)
 	}
@@ -45,7 +48,7 @@ func main() {
 	r := mux.NewRouter()
 
 	usersC := controllers.NewUsers(services.User)
-	galleriesC := controllers.NewGalleries(services.Gallery, services.Images, r)
+	galleriesC := controllers.NewGalleries(services.Gallery, services.Image, r)
 	staticC := controllers.NewStatic()
 
 	// middlewares
@@ -57,8 +60,7 @@ func main() {
 		log.Fatalf("Failed to generate random bytes: %s", err)
 	}
 
-	isProduction := false
-	csrfMw := csrf.Protect(randBytes, csrf.Secure(isProduction))
+	csrfMw := csrf.Protect(randBytes, csrf.Secure(cfg.Server.IsProduction()))
 
 	r.Use(middleware.RequestLogger)
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
@@ -110,8 +112,8 @@ func main() {
 	assetHandler := http.FileServer(http.Dir("./assets/"))
 	r.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", assetHandler))
 
-	fmt.Println("Listening on port 8080...")
-	err = http.ListenAndServe(":8080", csrfMw(userMw.Apply(r)))
+	fmt.Printf("Listening on port %d...\n", cfg.Server.Port)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), csrfMw(userMw.Apply(r)))
 	if err != nil {
 		log.Fatal(err)
 	}
