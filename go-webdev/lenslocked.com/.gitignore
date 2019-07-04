@@ -2,3 +2,4 @@ lenslocked.com
 tmp/
 exp/
 images/**
+.config
