@@ -66,6 +66,12 @@ func (v *View) Render(w http.ResponseWriter, r *http.Request, data interface{}) 
 		viewData = Data{Yield: data}
 	}
 
+	if a := getPersistedAlert(r); a != nil {
+		log.Println("found persisted alert. Deleting previous one")
+		clearPersistedAlert(w)
+		viewData.Alert = a
+	}
+
 	ctx := r.Context()
 	usr := context.User(ctx)
 	viewData.User = usr

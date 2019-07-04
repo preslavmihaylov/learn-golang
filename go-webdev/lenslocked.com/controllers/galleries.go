@@ -63,6 +63,7 @@ func (g *Galleries) Index(w http.ResponseWriter, r *http.Request) {
 	viewData.Yield = galleries
 	g.IndexView.Render(w, r, viewData)
 }
+
 func (g *Galleries) Create(w http.ResponseWriter, r *http.Request) {
 	var viewData views.Data
 
@@ -89,17 +90,32 @@ func (g *Galleries) Create(w http.ResponseWriter, r *http.Request) {
 
 	redirectUrl, err := g.router.Get(EditGalleryRoute).URL("id", strconv.Itoa(int(gallery.ID)))
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusFound)
+		a := views.Alert{
+			Level:   views.AlertLvlError,
+			Message: "Something went wrong...",
+		}
+
+		views.RedirectWithAlert(w, r, "/", http.StatusFound, a)
 		return
 	}
 
-	http.Redirect(w, r, redirectUrl.Path, http.StatusFound)
+	a := views.Alert{
+		Level:   views.AlertLvlSuccess,
+		Message: "You have successfully created a gallery!",
+	}
+
+	views.RedirectWithAlert(w, r, redirectUrl.Path, http.StatusFound, a)
 }
 
 func (g *Galleries) Show(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusFound)
+		a := views.Alert{
+			Level:   views.AlertLvlError,
+			Message: "Gallery not found...",
+		}
+
+		views.RedirectWithAlert(w, r, "/", http.StatusFound, a)
 		return
 	}
 
@@ -111,7 +127,12 @@ func (g *Galleries) Show(w http.ResponseWriter, r *http.Request) {
 func (g *Galleries) Edit(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusFound)
+		a := views.Alert{
+			Level:   views.AlertLvlError,
+			Message: "Gallery not found...",
+		}
+
+		views.RedirectWithAlert(w, r, "/", http.StatusFound, a)
 		return
 	}
 
@@ -129,7 +150,12 @@ func (g *Galleries) Edit(w http.ResponseWriter, r *http.Request) {
 func (g *Galleries) Update(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusFound)
+		a := views.Alert{
+			Level:   views.AlertLvlError,
+			Message: "Gallery not found...",
+		}
+
+		views.RedirectWithAlert(w, r, "/", http.StatusFound, a)
 		return
 	}
 
@@ -169,7 +195,12 @@ func (g *Galleries) Update(w http.ResponseWriter, r *http.Request) {
 func (g *Galleries) Delete(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusFound)
+		a := views.Alert{
+			Level:   views.AlertLvlError,
+			Message: "Gallery not found...",
+		}
+
+		views.RedirectWithAlert(w, r, "/", http.StatusFound, a)
 		return
 	}
 
@@ -190,17 +221,32 @@ func (g *Galleries) Delete(w http.ResponseWriter, r *http.Request) {
 
 	redirectUrl, err := g.router.Get(IndexGalleriesRoute).URL()
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusFound)
+		a := views.Alert{
+			Level:   views.AlertLvlError,
+			Message: "Something went wrong...",
+		}
+
+		views.RedirectWithAlert(w, r, "/", http.StatusFound, a)
 		return
 	}
 
-	http.Redirect(w, r, redirectUrl.Path, http.StatusFound)
+	a := views.Alert{
+		Level:   views.AlertLvlSuccess,
+		Message: "You have successfully deleted the gallery...",
+	}
+
+	views.RedirectWithAlert(w, r, redirectUrl.Path, http.StatusFound, a)
 }
 
 func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusFound)
+		a := views.Alert{
+			Level:   views.AlertLvlError,
+			Message: "Gallery not found...",
+		}
+
+		views.RedirectWithAlert(w, r, "/", http.StatusFound, a)
 		return
 	}
 
@@ -239,17 +285,32 @@ func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 
 	url, err := g.router.Get(EditGalleryRoute).URL("id", fmt.Sprintf("%v", gallery.ID))
 	if err != nil {
-		http.Redirect(w, r, "/galleries", http.StatusFound)
+		a := views.Alert{
+			Level:   views.AlertLvlError,
+			Message: "Something went wrong...",
+		}
+
+		views.RedirectWithAlert(w, r, "/", http.StatusFound, a)
 		return
 	}
 
-	http.Redirect(w, r, url.Path, http.StatusFound)
+	a := views.Alert{
+		Level:   views.AlertLvlSuccess,
+		Message: "You have successfully uploaded an image...",
+	}
+
+	views.RedirectWithAlert(w, r, url.Path, http.StatusFound, a)
 }
 
 func (g *Galleries) ImageDelete(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusFound)
+		a := views.Alert{
+			Level:   views.AlertLvlError,
+			Message: "Gallery not found...",
+		}
+
+		views.RedirectWithAlert(w, r, "/", http.StatusFound, a)
 		return
 	}
 
@@ -276,11 +337,21 @@ func (g *Galleries) ImageDelete(w http.ResponseWriter, r *http.Request) {
 
 	url, err := g.router.Get(EditGalleryRoute).URL("id", fmt.Sprintf("%v", gallery.ID))
 	if err != nil {
-		http.Redirect(w, r, "/galleries", http.StatusFound)
+		a := views.Alert{
+			Level:   views.AlertLvlError,
+			Message: "Something went wrong...",
+		}
+
+		views.RedirectWithAlert(w, r, "/galleries", http.StatusFound, a)
 		return
 	}
 
-	http.Redirect(w, r, url.Path, http.StatusFound)
+	a := views.Alert{
+		Level:   views.AlertLvlSuccess,
+		Message: "You have successfully deleted an image...",
+	}
+
+	views.RedirectWithAlert(w, r, url.Path, http.StatusFound, a)
 }
 
 func (g *Galleries) galleryByID(w http.ResponseWriter, r *http.Request) (*models.Gallery, error) {

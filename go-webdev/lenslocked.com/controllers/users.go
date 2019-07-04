@@ -3,7 +3,9 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/context"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/models"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/views"
 )
@@ -31,27 +33,6 @@ func NewUsers(us models.UserService) *Users {
 		LoginView:  views.NewView("bootstrap", "users/login"),
 		service:    us,
 	}
-}
-
-func (uc *Users) CookieTest(w http.ResponseWriter, r *http.Request) {
-	c, err := r.Cookie("remember_token")
-	if err != nil {
-		switch err {
-		case http.ErrNoCookie:
-			fmt.Fprintln(w, "no cookie found")
-		default:
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-
-		return
-	}
-
-	usr, err := uc.service.ByRememberToken(c.Value)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	}
-
-	fmt.Fprintln(w, usr)
 }
 
 func (uc *Users) Create(w http.ResponseWriter, r *http.Request) {
@@ -121,6 +102,13 @@ func (uc *Users) Login(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/galleries", http.StatusFound)
 }
 
+func (uc *Users) Logout(w http.ResponseWriter, r *http.Request) {
+	usr := context.User(r.Context())
+	uc.logout(w, usr)
+
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
 func (uc *Users) signIn(w http.ResponseWriter, u *models.User) error {
 	err := u.GenerateToken()
 	if err != nil {
@@ -133,6 +121,23 @@ func (uc *Users) signIn(w http.ResponseWriter, u *models.User) error {
 	}
 
 	cookie := http.Cookie{Name: "remember_token", Value: u.RememberToken, HttpOnly: true}
+	http.SetCookie(w, &cookie)
+
+	return nil
+}
+
+func (uc *Users) logout(w http.ResponseWriter, u *models.User) error {
+	err := u.GenerateToken()
+	if err != nil {
+		return err
+	}
+
+	err = uc.service.Update(u)
+	if err != nil {
+		return fmt.Errorf("failed to update user: %s", err)
+	}
+
+	cookie := http.Cookie{Name: "remember_token", Value: "", Expires: time.Now(), HttpOnly: true}
 	http.SetCookie(w, &cookie)
 
 	return nil

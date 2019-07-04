@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/config"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/controllers"
+	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/emails"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/middleware"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/models"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/rand"
@@ -23,6 +24,7 @@ func main() {
 
 	cfg := config.LoadConfig(isProductionFlag)
 
+	emails.Setup(cfg.Mailgun)
 	services, err := models.NewServices(
 		models.WithGorm(cfg.Database.Dialect(), cfg.Database.ConnectionInfo()),
 		models.WithLogMode(!cfg.Server.IsProduction()),
@@ -73,7 +75,7 @@ func main() {
 	// users routes
 	r.Handle("/signup", usersC.SignupView).Methods("GET")
 	r.Handle("/login", usersC.LoginView).Methods("GET")
-	r.HandleFunc("/cookietest", usersC.CookieTest).Methods("GET")
+	r.HandleFunc("/logout", requireUserMw.ApplyFunc(usersC.Logout)).Methods("POST")
 	r.HandleFunc("/signup", usersC.Create).Methods("POST")
 	r.HandleFunc("/login", usersC.Login).Methods("POST")
 
