@@ -35,10 +35,17 @@ func NewUsers(us models.UserService) *Users {
 	}
 }
 
-func (uc *Users) Create(w http.ResponseWriter, r *http.Request) {
-	var viewData views.Data
+func (uc *Users) GetSignup(w http.ResponseWriter, r *http.Request) {
+	var form SignupForm
+	parseURLParams(r, &form)
+	uc.SignupView.Render(w, r, form)
+}
 
+func (uc *Users) PostSignup(w http.ResponseWriter, r *http.Request) {
+	var viewData views.Data
 	form := SignupForm{}
+	viewData.Yield = &form
+
 	err := parseForm(r, &form)
 	if err != nil {
 		viewData.SetAlert(err)

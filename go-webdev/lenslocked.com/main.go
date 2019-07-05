@@ -73,10 +73,10 @@ func main() {
 	r.Handle("/faq", staticC.FAQView).Methods("GET")
 
 	// users routes
-	r.Handle("/signup", usersC.SignupView).Methods("GET")
+	r.HandleFunc("/signup", usersC.GetSignup).Methods("GET")
 	r.Handle("/login", usersC.LoginView).Methods("GET")
 	r.HandleFunc("/logout", requireUserMw.ApplyFunc(usersC.Logout)).Methods("POST")
-	r.HandleFunc("/signup", usersC.Create).Methods("POST")
+	r.HandleFunc("/signup", usersC.PostSignup).Methods("POST")
 	r.HandleFunc("/login", usersC.Login).Methods("POST")
 
 	// galleries routes
