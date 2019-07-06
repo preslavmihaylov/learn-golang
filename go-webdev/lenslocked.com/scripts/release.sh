@@ -1,9 +1,9 @@
 #!/bin/bash -e
 
 REMOTE_ADDR=lenslocked.myslidekit.com
+REMOTE_GOPATH=/root/go
 REMOTE_SRC_DIR=$REMOTE_GOPATH/src/github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com
 REMOTE_APP_DIR=/root/lenslocked
-REMOTE_GOPATH=/root/go
 REMOTE_GO_BIN=/usr/local/go/bin
 
 cd "$GOPATH/src/github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com"
@@ -39,6 +39,8 @@ ssh root@$REMOTE_ADDR "export GOPATH=$REMOTE_GOPATH; \
     $REMOTE_GO_BIN/go get github.com/gorilla/mux"
 ssh root@$REMOTE_ADDR "export GOPATH=$REMOTE_GOPATH; \
     $REMOTE_GO_BIN/go get github.com/gorilla/csrf"
+ssh root@$REMOTE_ADDR "export GOPATH=$REMOTE_GOPATH; \
+    $REMOTE_GO_BIN/go get gopkg.in/mailgun/mailgun-go.v3"
 
 echo "  - Building source code on remote server..."
 ssh root@$REMOTE_ADDR "export GOPATH=$REMOTE_GOPATH; \
