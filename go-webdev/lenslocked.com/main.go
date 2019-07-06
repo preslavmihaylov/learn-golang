@@ -78,6 +78,10 @@ func main() {
 	r.HandleFunc("/logout", requireUserMw.ApplyFunc(usersC.Logout)).Methods("POST")
 	r.HandleFunc("/signup", usersC.PostSignup).Methods("POST")
 	r.HandleFunc("/login", usersC.Login).Methods("POST")
+	r.Handle("/forgot_password", usersC.ForgotPasswordView).Methods("GET")
+	r.HandleFunc("/forgot_password", usersC.ForgotPassword).Methods("POST")
+	r.HandleFunc("/reset_password", usersC.GetResetPassword).Methods("GET")
+	r.HandleFunc("/reset_password", usersC.PostResetPassword).Methods("POST")
 
 	// galleries routes
 	indexGallery := requireUserMw.ApplyFunc(galleriesC.Index)

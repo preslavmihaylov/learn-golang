@@ -18,6 +18,7 @@ var (
 	ErrEmailTaken            modelError = "models: email is taken"
 	ErrRememberTokenTooShort modelError = "models: remember token is too short"
 	ErrRememberTokenRequired modelError = "models: remember token is required"
+	ErrRememberTokenInvalid  modelError = "models: remember token is invalid"
 
 	// Gallery Errors
 	ErrUserIDRequired modelError = "models: user ID is required"

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -273,7 +274,12 @@ func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 			g.EditView.Render(w, r, viewData)
 			return
 		}
-		defer file.Close()
+		defer func() {
+			err := file.Close()
+			if err != nil {
+				log.Printf("wasn't able to close image file: %s", err)
+			}
+		}()
 
 		err = g.imageService.Create(gallery.ID, file, f.Filename)
 		if err != nil {

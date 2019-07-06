@@ -13,10 +13,10 @@ type userValidator struct {
 	emailRegex *regexp.Regexp
 }
 
-func NewUserValidator(userDB UserDB, pepper, hmacKey string) *userValidator {
+func newUserValidator(userDB UserDB, pepper string, hmac hash.HMAC) *userValidator {
 	return &userValidator{
 		UserDB:     userDB,
-		hmac:       hash.NewHMAC(hmacKey),
+		hmac:       hmac,
 		pepper:     pepper,
 		emailRegex: regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,16}$`),
 	}

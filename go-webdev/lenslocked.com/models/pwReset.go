@@ -8,3 +8,9 @@ type pwReset struct {
 	Token     string `gorm:"-"`
 	TokenHash string `gorm:"not null;unique_index"`
 }
+
+func newPwReset(userID uint) *pwReset {
+	return &pwReset{
+		UserID: userID,
+	}
+}
