@@ -6,6 +6,7 @@ import (
 
 var (
 	ErrNotFound modelError = "models: resource not found"
+	ErrNilModel modelError = "models: given resource is nil"
 
 	// User Errors
 	ErrIDInvalid             modelError = "models: invalid id"
@@ -23,6 +24,10 @@ var (
 	// Gallery Errors
 	ErrUserIDRequired modelError = "models: user ID is required"
 	ErrTitleRequired  modelError = "models: title is required"
+
+	// OAuth Errors
+	ErrOAuthServiceRequired modelError = "models: oauth service is required"
+	ErrOAuthTokenRequired   modelError = "models: oauth token is required"
 )
 
 type modelError string

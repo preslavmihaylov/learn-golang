@@ -10,6 +10,7 @@ type Config struct {
 	Server   ServerConfig   `json:"server"`
 	Database PostgresConfig `json:"database"`
 	Mailgun  MailgunConfig  `json:"mailgun"`
+	Dropbox  DropboxConfig  `json:"dropbox"`
 }
 
 const (

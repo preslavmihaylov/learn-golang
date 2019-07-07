@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
@@ -14,6 +16,7 @@ import (
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/middleware"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/models"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/rand"
+	"golang.org/x/oauth2"
 )
 
 func main() {
@@ -30,7 +33,8 @@ func main() {
 		models.WithLogMode(!cfg.Server.IsProduction()),
 		models.WithUserService(cfg.Server.Pepper, cfg.Server.HMACKey),
 		models.WithGalleryService(),
-		models.WithImageService())
+		models.WithImageService(),
+		models.WithOAuthService())
 	if err != nil {
 		log.Fatalf("failed to create users service: %s", err)
 	}
@@ -66,6 +70,60 @@ func main() {
 
 	r.Use(middleware.RequestLogger)
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
+
+	// ctx := context.Background()
+	dropboxCfg := &oauth2.Config{
+		ClientID:     cfg.Dropbox.ID,
+		ClientSecret: cfg.Dropbox.Secret,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  cfg.Dropbox.AuthURL,
+			TokenURL: cfg.Dropbox.TokenURL,
+		},
+		RedirectURL: "http://localhost:8080/oauth/dropbox/callback",
+	}
+
+	dropboxRedirect := func(w http.ResponseWriter, r *http.Request) {
+		state := csrf.Token(r)
+		cookie := http.Cookie{
+			Name:     "oauth_state",
+			Value:    state,
+			HttpOnly: true,
+			Expires:  time.Now().Add(time.Minute * 5),
+		}
+		http.SetCookie(w, &cookie)
+
+		url := dropboxCfg.AuthCodeURL(state)
+		http.Redirect(w, r, url, http.StatusFound)
+	}
+
+	dropboxCallback := func(w http.ResponseWriter, r *http.Request) {
+		err := r.ParseForm()
+		if err != nil {
+			log.Fatalf("something went wrong: %s", err)
+		}
+
+		receivedState := r.FormValue("state")
+		stateCookie, err := r.Cookie("oauth_state")
+		if err != nil {
+			http.Error(w, "Missing state", http.StatusBadRequest)
+			return
+		} else if stateCookie == nil || receivedState != stateCookie.Value {
+			http.Error(w, "Invalid state", http.StatusBadRequest)
+			return
+		}
+
+		dropboxCode := r.FormValue("code")
+		tok, err := dropboxCfg.Exchange(context.Background(), dropboxCode)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		fmt.Fprintf(w, "%+v", tok)
+	}
+
+	r.HandleFunc("/oauth/dropbox/connect", dropboxRedirect)
+	r.HandleFunc("/oauth/dropbox/callback", dropboxCallback)
 
 	// static routes
 	r.Handle("/", staticC.HomeView).Methods("GET")

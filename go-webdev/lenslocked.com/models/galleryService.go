@@ -6,14 +6,8 @@ type GalleryService interface {
 	GalleryDB
 }
 
-type galleryService struct {
-	GalleryDB
-}
-
 func NewGalleryService(db *gorm.DB) GalleryService {
-	return &galleryService{
-		GalleryDB: &galleryValidator{
-			GalleryDB: &galleryGorm{db},
-		},
+	return &galleryValidator{
+		GalleryDB: &galleryGorm{db},
 	}
 }
