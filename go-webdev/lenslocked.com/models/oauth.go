@@ -11,3 +11,7 @@ type OAuth struct {
 	UserID  uint   `gorm:"not null;unique_index:user_id_service"`
 	Service string `gorm:"not null;unique_index:user_id_service"`
 }
+
+const (
+	OAuthDropbox = "dropbox"
+)
