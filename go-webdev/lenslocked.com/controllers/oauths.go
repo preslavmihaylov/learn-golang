@@ -2,14 +2,15 @@ package controllers
 
 import (
 	"context"
-	"io"
+	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
+	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox"
+	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox/files"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
-	ll_context "github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/context"
+	llcontext "github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/context"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/models"
 	"golang.org/x/oauth2"
 )
@@ -80,7 +81,7 @@ func (o *OAuths) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usr := ll_context.User(r.Context())
+	usr := llcontext.User(r.Context())
 	if usr == nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
@@ -124,27 +125,42 @@ func (o *OAuths) DropboxTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usr := ll_context.User(r.Context())
+	usr := llcontext.User(r.Context())
 	usrOAuth, err := o.service.Find(usr.ID, "dropbox")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	dbxClient := o.configs["dropbox"].Client(context.TODO(), &usrOAuth.Token)
-
+	dbxClient := files.New(dropbox.Config{Token: usrOAuth.AccessToken})
 	dbxPath := r.FormValue("path")
-	req, err := http.NewRequest(
-		http.MethodPost, "https://api.dropboxapi.com/2/files/list_folder",
-		strings.NewReader("{\"path\": \""+dbxPath+"\"}"))
-	req.Header.Add("Content-Type", "application/json")
 
-	resp, err := dbxClient.Do(req)
+	res, err := dbxClient.ListFolder(&files.ListFolderArg{
+		Path:      dbxPath,
+		Recursive: true,
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	defer resp.Body.Close()
 
-	io.Copy(w, resp.Body)
+	for _, e := range res.Entries {
+		switch v := e.(type) {
+		case *files.FileMetadata:
+			fmt.Fprintln(w, v.Name)
+		}
+	}
+	// req, err := http.NewRequest(
+	// 	http.MethodPost, "https://api.dropboxapi.com/2/files/list_folder",
+	// 	strings.NewReader("{\"path\": \""+dbxPath+"\"}"))
+	// req.Header.Add("Content-Type", "application/json")
+
+	// resp, err := dbxClient.Do(req)
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+	// defer resp.Body.Close()
+
+	// io.Copy(w, resp.Body)
 }

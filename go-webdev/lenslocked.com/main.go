@@ -43,7 +43,7 @@ func main() {
 		}
 	}()
 
-	// _ = usersS.DestructiveReset()
+	// _ = services.DestructiveReset()
 	err = services.AutoMigrate()
 	if err != nil {
 		log.Fatal(err)
