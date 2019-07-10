@@ -41,6 +41,8 @@ ssh root@$REMOTE_ADDR "export GOPATH=$REMOTE_GOPATH; \
     $REMOTE_GO_BIN/go get github.com/gorilla/csrf"
 ssh root@$REMOTE_ADDR "export GOPATH=$REMOTE_GOPATH; \
     $REMOTE_GO_BIN/go get gopkg.in/mailgun/mailgun-go.v3"
+ssh root@$REMOTE_ADDR "export GOPATH=$REMOTE_GOPATH; \
+    $REMOTE_GO_BIN/go get github.com/dropbox/dropbox-sdk-go-unofficial/dropbox/..."
 
 echo "  - Building source code on remote server..."
 ssh root@$REMOTE_ADDR "export GOPATH=$REMOTE_GOPATH; \

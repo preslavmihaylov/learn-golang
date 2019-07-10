@@ -59,7 +59,7 @@ func main() {
 			AuthURL:  cfg.Dropbox.AuthURL,
 			TokenURL: cfg.Dropbox.TokenURL,
 		},
-		RedirectURL: "http://localhost:8080/oauth/dropbox/callback",
+		RedirectURL: cfg.Dropbox.RedirectURL,
 	}
 
 	usersC := controllers.NewUsers(services.User)
