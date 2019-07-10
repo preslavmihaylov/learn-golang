@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strconv"
+	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/context"
@@ -239,6 +241,58 @@ func (g *Galleries) Delete(w http.ResponseWriter, r *http.Request) {
 	views.RedirectWithAlert(w, r, redirectUrl.Path, http.StatusFound, a)
 }
 
+func (g *Galleries) ImageViaLink(w http.ResponseWriter, r *http.Request) {
+	gallery, err := g.galleryByID(w, r)
+	if err != nil {
+		a := views.Alert{
+			Level:   views.AlertLvlError,
+			Message: "Gallery not found...",
+		}
+
+		views.RedirectWithAlert(w, r, "/", http.StatusFound, a)
+		return
+	}
+
+	usr := context.User(r.Context())
+	if gallery.UserID != usr.ID {
+		http.Error(w, "gallery not found", http.StatusForbidden)
+		return
+	}
+
+	var viewData views.Data
+	viewData.Yield = gallery
+	err = r.ParseForm()
+	if err != nil {
+		viewData.SetAlert(err)
+		g.EditView.Render(w, r, viewData)
+		return
+	}
+
+	imgURLs := r.PostForm["files"]
+	err = g.downloadImagesViaURLs(gallery.ID, imgURLs)
+	if err != nil {
+		views.RedirectWithAlert(w, r, "/", http.StatusFound, views.Alert{
+			Level:   views.AlertLvlError,
+			Message: "There was a problem getting some of the images...",
+		})
+		return
+	}
+
+	url, err := g.router.Get(EditGalleryRoute).URL("id", fmt.Sprintf("%v", gallery.ID))
+	if err != nil {
+		views.RedirectWithAlert(w, r, "/", http.StatusFound, views.Alert{
+			Level:   views.AlertLvlError,
+			Message: "Something went wrong...",
+		})
+		return
+	}
+
+	views.RedirectWithAlert(w, r, url.Path, http.StatusFound, views.Alert{
+		Level:   views.AlertLvlSuccess,
+		Message: "You have successfully added your images",
+	})
+}
+
 func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
@@ -380,4 +434,42 @@ func (g *Galleries) galleryByID(w http.ResponseWriter, r *http.Request) (*models
 	gallery.Images = images
 
 	return gallery, nil
+}
+
+func (g *Galleries) downloadImagesViaURLs(galleryID uint, imgURLs []string) error {
+	var wg sync.WaitGroup
+	errChan := make(chan error)
+	defer close(errChan)
+
+	for _, imgURL := range imgURLs {
+		wg.Add(1)
+
+		go func(url string) {
+			defer wg.Done()
+
+			resp, err := http.Get(url)
+			if err != nil {
+				errChan <- err
+			}
+			defer resp.Body.Close()
+
+			_, filename := filepath.Split(url)
+			err = g.imageService.Create(galleryID, resp.Body, filename)
+			if err != nil {
+				errChan <- err
+			}
+		}(imgURL)
+	}
+
+	wg.Wait()
+
+	select {
+	case err := <-errChan:
+		if err != nil {
+			return err
+		}
+	default:
+	}
+
+	return nil
 }

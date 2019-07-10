@@ -128,6 +128,9 @@ func main() {
 
 	// images routes
 	r.HandleFunc("/galleries/{id:[0-9]+}/images", imageUpload).Methods("POST")
+	r.HandleFunc("/galleries/{id:[0-9]+}/images/link",
+		requireUserMw.ApplyFunc(galleriesC.ImageViaLink)).Methods("POST")
+
 	r.HandleFunc("/galleries/{id:[0-9]+}/images/{filename}/delete", imageDelete).Methods("POST")
 
 	// file servers

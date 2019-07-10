@@ -35,7 +35,7 @@ func NewView(layout string, files ...string) *View {
 		files[i] = viewsDir + files[i] + tmplExtension
 	}
 
-	files = append(files, layouts...)
+	files = append(layouts, files...)
 	t, err := template.New("").Funcs(template.FuncMap{
 		"csrfField": func() (template.HTML, error) {
 			// this is a stubbed version of the function. It should be provided

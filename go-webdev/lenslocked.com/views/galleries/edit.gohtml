@@ -25,6 +25,14 @@
     </div>
 </div>
 <div class="row">
+    <div class="col-md-12 col-md-offset-1">
+        <div id="dropbox-button-container">
+        <!-- DROPBOX BUTTON -->
+        </div>
+        {{template "dropboxImageForm" .}}
+    </div>
+</div>
+<div class="row">
     <div class="col-md-10 col-md-offset-1">
         <h3>Dangerous buttons...</h3>
         <hr>
@@ -61,6 +69,13 @@
 </form>
 {{end}}
 
+{{define "dropboxImageForm"}}
+<form action="/galleries/{{.ID}}/images/link" method="POST" class="form-horizontal" id="dropbox-image-form">
+    {{csrfField}}
+    <!-- Filled with Dropbox JS -->
+</form>
+{{end}}
+
 {{define "uploadImageForm"}}
 <form action="/galleries/{{.ID}}/images" method="POST" enctype="multipart/form-data" class="form-horizontal">
     {{csrfField}}
@@ -93,4 +108,32 @@
         {{end}}
         </div>
     {{end}}
+{{end}}
+
+{{define "js-footer"}}
+<script type="text/javascript" src="https://www.dropbox.com/static/api/2/dropins.js" 
+        id="dropboxjs" data-app-key="suvk6n6qgdxks64"></script>
+<script>
+options = {
+    success: function(files) {
+        form = document.getElementById("dropbox-image-form");
+        for (var i = 0; i < files.length; i++) {
+            var input = document.createElement("input");
+            input.type = "hidden";
+            input.name = "files";
+            input.value = files[i].link;
+            form.appendChild(input);
+        }
+
+        form.submit();
+    },
+    linkType: "direct",
+    multiselect: true,
+    extensions: ["images"],
+    folderselect: false, 
+    sizeLimit: 1024 * 100,
+};
+var button = Dropbox.createChooseButton(options);
+document.getElementById("dropbox-button-container").appendChild(button);
+</script>
 {{end}}

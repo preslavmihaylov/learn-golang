@@ -6,11 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox"
-	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox/files"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	llcontext "github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/context"
+	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/dropbox"
 	"github.com/preslavmihaylov/learn-golang/go-webdev/lenslocked.com/models"
 	"golang.org/x/oauth2"
 )
@@ -126,41 +125,18 @@ func (o *OAuths) DropboxTest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	usr := llcontext.User(r.Context())
+	if usr == nil {
+		panic("endpoint should have require user middleware setup")
+	}
+
+	dbxPath := r.FormValue("path")
 	usrOAuth, err := o.service.Find(usr.ID, "dropbox")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	dbxClient := files.New(dropbox.Config{Token: usrOAuth.AccessToken})
-	dbxPath := r.FormValue("path")
-
-	res, err := dbxClient.ListFolder(&files.ListFolderArg{
-		Path:      dbxPath,
-		Recursive: true,
-	})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	for _, e := range res.Entries {
-		switch v := e.(type) {
-		case *files.FileMetadata:
-			fmt.Fprintln(w, v.Name)
-		}
-	}
-	// req, err := http.NewRequest(
-	// 	http.MethodPost, "https://api.dropboxapi.com/2/files/list_folder",
-	// 	strings.NewReader("{\"path\": \""+dbxPath+"\"}"))
-	// req.Header.Add("Content-Type", "application/json")
-
-	// resp, err := dbxClient.Do(req)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusBadRequest)
-	// 	return
-	// }
-	// defer resp.Body.Close()
-
-	// io.Copy(w, resp.Body)
+	folders, files, err := dropbox.List(usrOAuth.AccessToken, r.FormValue(dbxPath))
+	fmt.Fprintln(w, "Folders=", folders)
+	fmt.Fprintln(w, "Files=", files)
 }
