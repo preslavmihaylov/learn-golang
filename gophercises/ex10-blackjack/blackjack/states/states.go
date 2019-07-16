@@ -136,23 +136,35 @@ func HitState(data *data.GameData) GameState {
 		data.NextPlayersTurn()
 	}
 
+	var nextState GameState
 	if !data.IsDealersTurn() {
-		return DelayedTransition(PlayerTurnState)
+		nextState = DelayedTransition(PlayerTurnState)
+		if player.Busted() {
+			nextState = DelayedTransition(DealerTurnState)
+		}
 	} else {
-		return DelayedTransition(DealerTurnState)
+		nextState = DelayedTransition(DealerTurnState)
+		if player.Busted() {
+			nextState = DelayedTransition(ResolveState)
+		}
 	}
+
+	return nextState
 }
 
 func StandState(data *data.GameData) GameState {
 	player := data.CurrentPlayer()
 	fmt.Printf("--- %s stands.\n", player.Name())
-	data.NextPlayersTurn()
 
+	var nextState GameState
 	if !data.IsDealersTurn() {
-		return DelayedTransition(PlayerTurnState)
+		nextState = DelayedTransition(PlayerTurnState)
 	} else {
-		return DelayedTransition(ResolveState)
+		nextState = DelayedTransition(ResolveState)
 	}
+
+	data.NextPlayersTurn()
+	return nextState
 }
 
 func ExitState(data *data.GameData) GameState {
