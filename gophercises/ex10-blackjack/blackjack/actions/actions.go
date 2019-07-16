@@ -1,14 +1,16 @@
-package blackjack
+package actions
 
 import (
 	"fmt"
 	"strings"
+
+	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/data"
 )
 
 type Action interface {
 	fmt.Stringer
 	Help() string
-	Do(data *BlackjackData) GameState
+	Do(data *data.GameData)
 }
 
 func NewActions(actions ...Action) []Action {
@@ -17,11 +19,12 @@ func NewActions(actions ...Action) []Action {
 		res = append(res, a)
 	}
 
+	res = append(res, ExitAction{})
 	res = append(res, HelpAction{res})
 	return res
 }
 
-func Prompt(data *BlackjackData, actions []Action) Action {
+func Prompt(data *data.GameData, actions []Action) Action {
 	fmt.Println("What will you do?")
 	fmt.Printf("> ")
 
@@ -50,12 +53,10 @@ func (ha HelpAction) Help() string {
 	return "show info about available options"
 }
 
-func (ha HelpAction) Do(data *BlackjackData) GameState {
+func (ha HelpAction) Do(data *data.GameData) {
 	for _, a := range ha.actions {
 		fmt.Printf("\t%s - %s\n", a.String(), a.Help())
 	}
-
-	return nil
 }
 
 type HitAction struct{}
@@ -68,8 +69,7 @@ func (ha HitAction) Help() string {
 	return "draw a new card"
 }
 
-func (ha HitAction) Do(data *BlackjackData) GameState {
-	return HitState
+func (ha HitAction) Do(data *data.GameData) {
 }
 
 type StandAction struct{}
@@ -82,6 +82,18 @@ func (ha StandAction) Help() string {
 	return "end turn and proceed with next player"
 }
 
-func (ha StandAction) Do(data *BlackjackData) GameState {
-	return StandState
+func (ha StandAction) Do(data *data.GameData) {
+}
+
+type ExitAction struct{}
+
+func (e ExitAction) String() string {
+	return "exit"
+}
+
+func (e ExitAction) Help() string {
+	return "exit the game"
+}
+
+func (e ExitAction) Do(data *data.GameData) {
 }
