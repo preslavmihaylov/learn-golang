@@ -23,7 +23,7 @@ func New(decksCnt int, p ...Player) *GameData {
 		log.Fatalf("failed to initialize deck: %s", err)
 	}
 
-	data.players = []Player{NewPlayer("Player 1")}
+	data.players = []Player{p[0]}
 	data.Dealer = NewDealer("Dealer")
 	data.NewRound()
 

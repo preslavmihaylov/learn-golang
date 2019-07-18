@@ -5,6 +5,7 @@ import (
 )
 
 type Player interface {
+	Interface() PlayerInterface
 	Name() string
 	Hand() []decks.Card
 	Deal(c decks.Card)
@@ -15,12 +16,17 @@ type Player interface {
 }
 
 type player struct {
-	name string
-	hand []decks.Card
+	playerInterface PlayerInterface
+	name            string
+	hand            []decks.Card
 }
 
-func NewPlayer(name string) Player {
-	return &player{name, []decks.Card{}}
+func NewPlayer(pi PlayerInterface, name string) Player {
+	return &player{pi, name, []decks.Card{}}
+}
+
+func (p *player) Interface() PlayerInterface {
+	return p.playerInterface
 }
 
 func (p *player) Name() string {

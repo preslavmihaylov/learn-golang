@@ -15,7 +15,7 @@ type dealer struct {
 }
 
 func NewDealer(name string) Dealer {
-	return &dealer{Player: NewPlayer(name)}
+	return &dealer{Player: NewPlayer(nil, name)}
 }
 
 func (d *dealer) Score() int {
