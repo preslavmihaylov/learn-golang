@@ -1,49 +1,59 @@
 package states
 
 import (
-	"fmt"
 	"time"
 
+	"github.com/preslavmihaylov/learn-golang/gophercises/ex09-deck/decks"
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/data"
 )
 
-type GameState func(data *data.GameData) GameState
+type gameState func(data *data.GameData) gameState
 
-func DelayedTransition(gs GameState) GameState {
+func delayedTransition(gs gameState) gameState {
 	time.Sleep(time.Second * 2)
 	return gs
 }
 
-func Transition(gs GameState) GameState {
+func transition(gs gameState) gameState {
 	return gs
 }
 
-func InitState(gd *data.GameData) GameState {
-	return Transition(DealState)
+func InitState(gd *data.GameData) gameState {
+	return transition(dealState)
 }
 
-func DealState(gd *data.GameData) GameState {
-	fmt.Println("--- Dealing cards...")
+func dealState(gd *data.GameData) gameState {
 	handSize := 2
+
+	var ev data.DealCardsEvent
 	for i := 0; i < handSize; i++ {
 		for i := range gd.Players() {
-			gd.Players()[i].Deal(gd.Draw())
+			c := gd.Draw()
+			gd.Players()[i].Deal(c)
+			ev.PlayerHand = append(ev.PlayerHand, c)
 		}
 
-		gd.Dealer.Deal(gd.Draw())
+		c := gd.Draw()
+		gd.Dealer.Deal(c)
+		ev.DealerHand = append(ev.DealerHand, c)
 	}
 
-	return DelayedTransition(PlayerTurnState)
+	data.EmitEvent(gd.Players(), ev)
+
+	return delayedTransition(playerTurnState)
 }
 
-func PlayerTurnState(gd *data.GameData) GameState {
+func playerTurnState(gd *data.GameData) gameState {
 	if gd.IsDealersTurn() {
-		return Transition(DealerTurnState)
+		return transition(dealerTurnState)
 	}
 
 	player := gd.CurrentPlayer()
-	fmt.Printf("--- %s's turn\n", player.Name())
-	printTurnInfo(gd)
+	data.EmitEvent(gd.Players(), data.PlayerTurnEvent{
+		PlayerName: player.Name(),
+		PlayerHand: player.Hand(),
+		DealerHand: gd.Dealer.Hand(),
+	})
 
 	var a data.Action
 	as := data.NewActions(data.HitAction{}, data.StandAction{})
@@ -60,138 +70,131 @@ func PlayerTurnState(gd *data.GameData) GameState {
 		a.Do(gd)
 		switch a.(type) {
 		case data.HitAction:
-			return DelayedTransition(HitState)
+			return delayedTransition(hitState)
 		case data.StandAction:
-			return DelayedTransition(StandState)
+			return delayedTransition(standState)
 		case data.ExitAction:
-			return Transition(ExitState)
+			return transition(exitState)
 		default:
 			// continue
 		}
 	}
 }
 
-func DealerTurnState(gd *data.GameData) GameState {
-	fmt.Printf("--- %s's turn\n", gd.Dealer.Name())
-	fmt.Println("Players still in game:")
+func dealerTurnState(gd *data.GameData) gameState {
+	var ev data.DealerTurnEvent
+	ev.PlayersInGame = make(map[string][]decks.Card)
+
 	for _, p := range gd.Players() {
 		if !p.Busted() {
-			printPlayerInfo(gd, p)
+			ev.PlayersInGame[p.Name()] = p.Hand()
 		}
 	}
 
 	if !gd.Dealer.Revealed() {
-		fmt.Printf("%s reveals hand\n", gd.Dealer.Name())
+		ev.DealerRevealed = true
 		gd.Dealer.Reveal()
 	}
 
-	printPlayerInfo(gd, gd.Dealer)
+	ev.DealerHand = gd.Dealer.Hand()
+
+	data.EmitEvent(gd.Players(), ev)
 	if dealerShouldPlay(gd) {
-		return DelayedTransition(HitState)
+		return delayedTransition(hitState)
 	} else {
-		return DelayedTransition(StandState)
+		return delayedTransition(standState)
 	}
 }
 
-func ResolveState(gd *data.GameData) GameState {
-	fmt.Println("--- Resolution")
+func resolveState(gd *data.GameData) gameState {
+	var ev data.ResolveEvent
+	ev.Results = make(map[string]data.Result)
+
 	for _, p := range gd.Players() {
+		res := data.Result{
+			PlayerScore: p.Score(),
+			DealerScore: gd.Dealer.Score(),
+		}
+
 		if p.Busted() {
-			fmt.Printf("%s Busted!\n", p.Name())
-			continue
+			res.Outcome = data.Busted
 		} else if gd.Dealer.Busted() {
-			fmt.Printf("%s Busted. %s wins!\n", gd.Dealer.Name(), p.Name())
-			continue
-		}
-
-		fmt.Printf("%s's Score: %d, %s's Score: %d\n",
-			p.Name(), p.Score(), gd.Dealer.Name(), gd.Dealer.Score())
-
-		fmt.Printf("%s ", p.Name())
-		if gd.Dealer.Score() < p.Score() {
-			fmt.Println("won!")
+			res.Outcome = data.DealerBusted
+		} else if gd.Dealer.Score() < p.Score() {
+			res.Outcome = data.Won
 		} else if gd.Dealer.Score() > p.Score() {
-			fmt.Println("lost!")
+			res.Outcome = data.Lost
 		} else {
-			fmt.Println("tied!")
+			res.Outcome = data.Tied
 		}
+
+		ev.Results[p.Name()] = res
 	}
 
-	return DelayedTransition(RoundEndsState)
+	data.EmitEvent(gd.Players(), ev)
+	return delayedTransition(roundEndsState)
 }
 
-func RoundEndsState(gd *data.GameData) GameState {
-	fmt.Println("--- Turn Ends")
+func roundEndsState(gd *data.GameData) gameState {
+	data.EmitEvent(gd.Players(), data.RoundEndsEvent{})
 	gd.NewRound()
 
-	return DelayedTransition(DealState)
+	return delayedTransition(dealState)
 }
 
-func HitState(gd *data.GameData) GameState {
+func hitState(gd *data.GameData) gameState {
+	var ev data.HitEvent
+
 	player := gd.CurrentPlayer()
-	fmt.Printf("--- %s hits!\n", player.Name())
+	ev.PlayerName = player.Name()
+
 	c := gd.Draw()
 	player.Deal(c)
+	ev.Card = c
 
-	fmt.Printf("Got %s\n", c)
 	if player.Busted() {
-		fmt.Printf("%s Busted!\n", player.Name())
+		ev.Busted = true
 		gd.NextPlayersTurn()
 	}
 
-	var nextState GameState
+	data.EmitEvent(gd.Players(), ev)
+
+	var nextState gameState
 	if !gd.IsDealersTurn() {
-		nextState = DelayedTransition(PlayerTurnState)
+		nextState = delayedTransition(playerTurnState)
 		if player.Busted() {
-			nextState = DelayedTransition(DealerTurnState)
+			nextState = delayedTransition(dealerTurnState)
 		}
 	} else {
-		nextState = DelayedTransition(DealerTurnState)
+		nextState = delayedTransition(dealerTurnState)
 		if player.Busted() {
-			nextState = DelayedTransition(ResolveState)
+			nextState = delayedTransition(resolveState)
 		}
 	}
 
 	return nextState
 }
 
-func StandState(gd *data.GameData) GameState {
-	player := gd.CurrentPlayer()
-	fmt.Printf("--- %s stands.\n", player.Name())
+func standState(gd *data.GameData) gameState {
+	var ev data.StandEvent
 
-	var nextState GameState
+	player := gd.CurrentPlayer()
+	ev.PlayerName = player.Name()
+
+	data.EmitEvent(gd.Players(), ev)
+	var nextState gameState
 	if !gd.IsDealersTurn() {
-		nextState = DelayedTransition(PlayerTurnState)
+		nextState = delayedTransition(playerTurnState)
 	} else {
-		nextState = DelayedTransition(ResolveState)
+		nextState = delayedTransition(resolveState)
 	}
 
 	gd.NextPlayersTurn()
 	return nextState
 }
 
-func ExitState(gd *data.GameData) GameState {
+func exitState(gd *data.GameData) gameState {
 	return nil
-}
-
-func printTurnInfo(gd *data.GameData) {
-	if gd.IsDealersTurn() {
-		return
-	}
-
-	p := gd.CurrentPlayer()
-	printPlayerInfo(gd, p)
-	printPlayerInfo(gd, gd.Dealer)
-}
-
-func printPlayerInfo(data *data.GameData, player data.Player) {
-	fmt.Printf("%s's Hand:\n", player.Name())
-	for _, c := range player.Hand() {
-		fmt.Printf("\t%s\n", c)
-	}
-
-	fmt.Printf("\n%s's Score: %d\n", player.Name(), player.Score())
-	fmt.Println()
 }
 
 func dealerShouldPlay(data *data.GameData) bool {

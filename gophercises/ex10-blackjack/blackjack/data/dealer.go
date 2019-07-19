@@ -24,10 +24,10 @@ func (d *dealer) Score() int {
 	}
 
 	if d.Revealed() {
-		return calculateScore(d.Hand()).value
+		return CalculateScore(d.Hand()).Value
 	}
 
-	return calculateScore(d.Hand()[:1]).value
+	return CalculateScore(d.Hand()[:1]).Value
 }
 
 func (d *dealer) Hand() []decks.Card {

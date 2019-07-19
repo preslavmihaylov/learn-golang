@@ -34,11 +34,11 @@ func (p *player) Name() string {
 }
 
 func (p *player) Score() int {
-	return calculateScore(p.hand).value
+	return CalculateScore(p.hand).Value
 }
 
 func (p *player) IsSoftScore() bool {
-	return calculateScore(p.hand).isSoft
+	return CalculateScore(p.hand).IsSoft
 }
 
 func (p *player) Hand() []decks.Card {

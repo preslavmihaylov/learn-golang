@@ -8,5 +8,12 @@ type GameInfo struct {
 }
 
 type PlayerInterface interface {
+	Listen(e GameEvent)
 	PlayerTurn(gi GameInfo, actions []Action) Action
+}
+
+func EmitEvent(players []Player, e GameEvent) {
+	for _, p := range players {
+		p.Interface().Listen(e)
+	}
 }
