@@ -1,20 +1,23 @@
 package data
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex09-deck/decks"
+	bjapi "github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/api"
 )
 
 type GameData struct {
 	Dealer
+	api        bjapi.BlackjackAPI
 	deck       *decks.Deck
 	discarded  []decks.Card
 	players    []Player
 	playerTurn int
 }
 
-func New(decksCnt int, p ...Player) *GameData {
+func New(decksCnt, playersCnt int, api bjapi.BlackjackAPI) *GameData {
 	var err error
 
 	data := GameData{}
@@ -23,7 +26,11 @@ func New(decksCnt int, p ...Player) *GameData {
 		log.Fatalf("failed to initialize deck: %s", err)
 	}
 
-	data.players = []Player{p[0]}
+	data.api = api
+	for i := 0; i < playersCnt; i++ {
+		data.players = append(data.players, NewPlayer(fmt.Sprintf("Player %d", i+1)))
+	}
+
 	data.Dealer = NewDealer("Dealer")
 	data.NewRound()
 
@@ -82,4 +89,8 @@ func (gd *GameData) NewRound() {
 
 	gd.Discard(gd.Dealer.Discard())
 	gd.Dealer.Hide()
+}
+
+func (gd *GameData) API() bjapi.BlackjackAPI {
+	return gd.api
 }

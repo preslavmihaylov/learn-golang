@@ -3,13 +3,14 @@ package blackjack
 import (
 	"fmt"
 
-	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/data"
-	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/states"
+	bjapi "github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/api"
+	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/internal/data"
+	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/internal/states"
 )
 
-func Play(players []data.PlayerInterface) {
+func Play(playersCnt int, api bjapi.BlackjackAPI) {
 	state := states.InitState
-	gd := data.New(3, data.NewPlayer(players[0], "Player 1"))
+	gd := data.New(3, playersCnt, api)
 	for state != nil {
 		state = state(gd)
 	}

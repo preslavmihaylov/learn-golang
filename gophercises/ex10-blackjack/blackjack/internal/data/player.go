@@ -2,10 +2,10 @@ package data
 
 import (
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex09-deck/decks"
+	bjapi "github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/api"
 )
 
 type Player interface {
-	Interface() PlayerInterface
 	Name() string
 	Hand() []decks.Card
 	Deal(c decks.Card)
@@ -16,17 +16,12 @@ type Player interface {
 }
 
 type player struct {
-	playerInterface PlayerInterface
-	name            string
-	hand            []decks.Card
+	name string
+	hand []decks.Card
 }
 
-func NewPlayer(pi PlayerInterface, name string) Player {
-	return &player{pi, name, []decks.Card{}}
-}
-
-func (p *player) Interface() PlayerInterface {
-	return p.playerInterface
+func NewPlayer(name string) Player {
+	return &player{name, []decks.Card{}}
 }
 
 func (p *player) Name() string {
@@ -34,11 +29,11 @@ func (p *player) Name() string {
 }
 
 func (p *player) Score() int {
-	return CalculateScore(p.hand).Value
+	return bjapi.CalculateScore(p.hand).Value
 }
 
 func (p *player) IsSoftScore() bool {
-	return CalculateScore(p.hand).IsSoft
+	return bjapi.CalculateScore(p.hand).IsSoft
 }
 
 func (p *player) Hand() []decks.Card {

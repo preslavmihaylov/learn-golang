@@ -1,6 +1,9 @@
 package data
 
-import "github.com/preslavmihaylov/learn-golang/gophercises/ex09-deck/decks"
+import (
+	"github.com/preslavmihaylov/learn-golang/gophercises/ex09-deck/decks"
+	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/api"
+)
 
 type Dealer interface {
 	Player
@@ -15,7 +18,7 @@ type dealer struct {
 }
 
 func NewDealer(name string) Dealer {
-	return &dealer{Player: NewPlayer(nil, name)}
+	return &dealer{Player: NewPlayer(name)}
 }
 
 func (d *dealer) Score() int {
@@ -24,10 +27,10 @@ func (d *dealer) Score() int {
 	}
 
 	if d.Revealed() {
-		return CalculateScore(d.Hand()).Value
+		return api.CalculateScore(d.Hand()).Value
 	}
 
-	return CalculateScore(d.Hand()[:1]).Value
+	return api.CalculateScore(d.Hand()[:1]).Value
 }
 
 func (d *dealer) Hand() []decks.Card {

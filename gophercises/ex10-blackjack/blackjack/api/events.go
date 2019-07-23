@@ -1,11 +1,11 @@
-package data
+package api
 
 import "github.com/preslavmihaylov/learn-golang/gophercises/ex09-deck/decks"
 
 type GameEvent interface{}
 
 type DealCardsEvent struct {
-	PlayerHand []decks.Card
+	Hands      map[string][]decks.Card
 	DealerHand []decks.Card
 }
 
