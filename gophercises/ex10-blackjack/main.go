@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack"
@@ -13,6 +15,10 @@ type CLIPlayer struct{}
 
 func (c *CLIPlayer) Listen(ev api.GameEvent) {
 	switch e := ev.(type) {
+	case api.StartBetEvent:
+		fmt.Printf("--- %s's turn to bet ---\n", e.PlayerName)
+	case api.BetEvent:
+		fmt.Printf("%s bets %d\n", e.PlayerName, e.Bet)
 	case api.DealCardsEvent:
 		fmt.Println("--- Dealing Cards ---")
 		for name, hand := range e.Hands {
@@ -101,15 +107,46 @@ func (c *CLIPlayer) Listen(ev api.GameEvent) {
 }
 
 func (c *CLIPlayer) PlayerTurn(actions []api.Action) api.Action {
+	return promptUser(actions)
+}
+
+func (c *CLIPlayer) BetTurn(actions []api.Action) api.Action {
+	return promptUser(actions)
+}
+
+func promptUser(actions []api.Action) api.Action {
 	fmt.Println("What will you do?")
 	fmt.Printf("> ")
 
+	var line string
+	scanner := bufio.NewScanner(os.Stdin)
+	if scanner.Scan() {
+		line = scanner.Text()
+	}
+
+	line = strings.Trim(line, " ")
+
 	var choice string
-	fmt.Scanln(&choice)
-	choice = strings.Trim(choice, " ")
+	tokens := strings.Fields(line)
+	if len(tokens) == 0 {
+		return nil
+	}
+
+	choice = tokens[0]
 
 	for _, a := range actions {
 		if a.String() == choice {
+			if a.ArgsCnt() > 0 && len(tokens) > 1 {
+				err := a.SetArgs(tokens[1:]...)
+				if err != nil {
+					fmt.Println(err)
+					break
+				}
+			} else if a.ArgsCnt() > 0 && len(tokens) == 1 {
+				fmt.Println("Not enough arguments supplied")
+				break
+			}
+
 			return a
 		}
 	}
@@ -121,5 +158,9 @@ func main() {
 	playersCnt := flag.Int("players", 1, "number of players in game")
 	flag.Parse()
 
+	// TODO: Add betting to player struct
+	// TODO: Payout at resolution state
+	// TODO: Add blackjack state
+	// TODO: Add splitting state
 	blackjack.Play(*playersCnt, &CLIPlayer{})
 }

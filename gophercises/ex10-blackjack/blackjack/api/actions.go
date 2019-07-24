@@ -2,11 +2,14 @@ package api
 
 import (
 	"fmt"
+	"strconv"
 )
 
 type Action interface {
 	fmt.Stringer
 	Help() string
+	ArgsCnt() int
+	SetArgs(args ...string) error
 }
 
 func NewActions(actions ...Action) []Action {
@@ -15,49 +18,100 @@ func NewActions(actions ...Action) []Action {
 		res = append(res, a)
 	}
 
-	res = append(res, ExitAction{})
-	res = append(res, HelpAction{res})
+	res = append(res, &ExitAction{})
+	res = append(res, &HelpAction{NoArgsAction{}, res})
 	return res
 }
 
+type NoArgsAction struct{}
+
+func (_ NoArgsAction) ArgsCnt() int {
+	return 0
+}
+
+func (_ NoArgsAction) SetArgs(args ...string) error {
+	if len(args) > 0 {
+		return fmt.Errorf("Too many args passed")
+	}
+
+	return nil
+}
+
 type HelpAction struct {
+	NoArgsAction
 	actions []Action
 }
 
-func (ha HelpAction) String() string {
+func (ha *HelpAction) String() string {
 	return "help"
 }
 
-func (ha HelpAction) Help() string {
+func (ha *HelpAction) Help() string {
 	return "show info about available options"
 }
 
-type HitAction struct{}
+type BetAction struct {
+	Bet int
+}
 
-func (ha HitAction) String() string {
+func (ba *BetAction) String() string {
+	return "bet"
+}
+
+func (ba *BetAction) Help() string {
+	return "place a bet"
+}
+
+func (ba *BetAction) ArgsCnt() int {
+	return 1
+}
+
+func (ba *BetAction) SetArgs(args ...string) error {
+	if len(args) > 1 {
+		return fmt.Errorf("Too many args passed")
+	}
+
+	var err error
+	ba.Bet, err = strconv.Atoi(args[0])
+	if err != nil {
+		return fmt.Errorf("couldn't parse bet: %s", err)
+	}
+
+	return nil
+}
+
+type HitAction struct {
+	NoArgsAction
+}
+
+func (ha *HitAction) String() string {
 	return "hit"
 }
 
-func (ha HitAction) Help() string {
+func (ha *HitAction) Help() string {
 	return "draw a new card"
 }
 
-type StandAction struct{}
+type StandAction struct {
+	NoArgsAction
+}
 
-func (ha StandAction) String() string {
+func (ha *StandAction) String() string {
 	return "stand"
 }
 
-func (ha StandAction) Help() string {
+func (ha *StandAction) Help() string {
 	return "end turn and proceed with next player"
 }
 
-type ExitAction struct{}
+type ExitAction struct {
+	NoArgsAction
+}
 
-func (e ExitAction) String() string {
+func (e *ExitAction) String() string {
 	return "exit"
 }
 
-func (e ExitAction) Help() string {
+func (e *ExitAction) Help() string {
 	return "exit the game"
 }

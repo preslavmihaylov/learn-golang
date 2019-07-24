@@ -78,7 +78,11 @@ func (gd *GameData) IsDealersTurn() bool {
 }
 
 func (gd *GameData) NextPlayersTurn() {
-	gd.playerTurn++
+	if gd.IsDealersTurn() {
+		gd.playerTurn = 0
+	} else {
+		gd.playerTurn++
+	}
 }
 
 func (gd *GameData) NewRound() {

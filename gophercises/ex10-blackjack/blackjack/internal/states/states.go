@@ -21,7 +21,47 @@ func transition(gs gameState) gameState {
 }
 
 func InitState(gd *data.GameData) gameState {
-	return transition(dealState)
+	return transition(betState)
+}
+
+func betState(gd *data.GameData) gameState {
+	if gd.IsDealersTurn() {
+		gd.NextPlayersTurn()
+		return transition(dealState)
+	}
+
+	player := gd.CurrentPlayer()
+	gd.API().Listen(api.StartBetEvent{
+		PlayerName: player.Name(),
+	})
+
+	var a api.Action
+	as := api.NewActions(&api.BetAction{})
+	for {
+		gameAPI := gd.API()
+		a = gameAPI.BetTurn(as)
+		if a == nil {
+			continue
+		}
+
+		switch act := a.(type) {
+		case *api.BetAction:
+			// TODO: Place bet
+			gd.API().Listen(api.BetEvent{
+				PlayerName: player.Name(),
+				Bet:        act.Bet,
+			})
+
+			gd.NextPlayersTurn()
+			return delayedTransition(betState)
+		case *api.HelpAction:
+			for _, a := range as {
+				fmt.Printf("\t%s - %s\n", a.String(), a.Help())
+			}
+		default:
+			// continue
+		}
+	}
 }
 
 func dealState(gd *data.GameData) gameState {
@@ -59,7 +99,7 @@ func playerTurnState(gd *data.GameData) gameState {
 	})
 
 	var a api.Action
-	as := api.NewActions(api.HitAction{}, api.StandAction{})
+	as := api.NewActions(&api.HitAction{}, &api.StandAction{})
 	for {
 		pi := gd.API()
 		a = pi.PlayerTurn(as)
@@ -68,13 +108,13 @@ func playerTurnState(gd *data.GameData) gameState {
 		}
 
 		switch a.(type) {
-		case api.HitAction:
+		case *api.HitAction:
 			return delayedTransition(hitState)
-		case api.StandAction:
+		case *api.StandAction:
 			return delayedTransition(standState)
-		case api.ExitAction:
+		case *api.ExitAction:
 			return transition(exitState)
-		case api.HelpAction:
+		case *api.HelpAction:
 			for _, a := range as {
 				fmt.Printf("\t%s - %s\n", a.String(), a.Help())
 			}
@@ -142,7 +182,7 @@ func roundEndsState(gd *data.GameData) gameState {
 	gd.API().Listen(api.RoundEndsEvent{})
 	gd.NewRound()
 
-	return delayedTransition(dealState)
+	return delayedTransition(betState)
 }
 
 func hitState(gd *data.GameData) gameState {
@@ -157,7 +197,9 @@ func hitState(gd *data.GameData) gameState {
 
 	if player.Busted() {
 		ev.Busted = true
-		gd.NextPlayersTurn()
+		if !gd.IsDealersTurn() {
+			gd.NextPlayersTurn()
+		}
 	}
 
 	gd.API().Listen(ev)
@@ -192,7 +234,10 @@ func standState(gd *data.GameData) gameState {
 		nextState = delayedTransition(resolveState)
 	}
 
-	gd.NextPlayersTurn()
+	if !gd.IsDealersTurn() {
+		gd.NextPlayersTurn()
+	}
+
 	return nextState
 }
 

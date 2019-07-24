@@ -4,6 +4,15 @@ import "github.com/preslavmihaylov/learn-golang/gophercises/ex09-deck/decks"
 
 type GameEvent interface{}
 
+type StartBetEvent struct {
+	PlayerName string
+}
+
+type BetEvent struct {
+	PlayerName string
+	Bet        int
+}
+
 type DealCardsEvent struct {
 	Hands      map[string][]decks.Card
 	DealerHand []decks.Card
