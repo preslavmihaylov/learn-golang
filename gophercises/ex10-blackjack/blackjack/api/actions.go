@@ -42,11 +42,11 @@ type HelpAction struct {
 	actions []Action
 }
 
-func (ha *HelpAction) String() string {
+func (_ *HelpAction) String() string {
 	return "help"
 }
 
-func (ha *HelpAction) Help() string {
+func (_ *HelpAction) Help() string {
 	return "show info about available options"
 }
 
@@ -54,11 +54,11 @@ type BetAction struct {
 	Bet int
 }
 
-func (ba *BetAction) String() string {
+func (_ *BetAction) String() string {
 	return "bet"
 }
 
-func (ba *BetAction) Help() string {
+func (_ *BetAction) Help() string {
 	return "place a bet"
 }
 
@@ -84,11 +84,11 @@ type HitAction struct {
 	NoArgsAction
 }
 
-func (ha *HitAction) String() string {
+func (_ *HitAction) String() string {
 	return "hit"
 }
 
-func (ha *HitAction) Help() string {
+func (_ *HitAction) Help() string {
 	return "draw a new card"
 }
 
@@ -96,22 +96,34 @@ type StandAction struct {
 	NoArgsAction
 }
 
-func (ha *StandAction) String() string {
+func (_ *StandAction) String() string {
 	return "stand"
 }
 
-func (ha *StandAction) Help() string {
+func (_ *StandAction) Help() string {
 	return "end turn and proceed with next player"
+}
+
+type DoubleAction struct {
+	NoArgsAction
+}
+
+func (_ *DoubleAction) String() string {
+	return "double"
+}
+
+func (_ *DoubleAction) Help() string {
+	return "double the bet and play only one card more"
 }
 
 type ExitAction struct {
 	NoArgsAction
 }
 
-func (e *ExitAction) String() string {
+func (_ *ExitAction) String() string {
 	return "exit"
 }
 
-func (e *ExitAction) Help() string {
+func (_ *ExitAction) Help() string {
 	return "exit the game"
 }

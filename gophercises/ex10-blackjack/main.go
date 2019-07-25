@@ -17,6 +17,12 @@ func (c *CLIPlayer) Listen(ev api.GameEvent) {
 	switch e := ev.(type) {
 	case api.StartBetEvent:
 		fmt.Printf("--- %s's turn to bet ---\n", e.PlayerName)
+		fmt.Printf("%s's Balance: ", e.PlayerName)
+		if e.Balance > 0 {
+			fmt.Print("+")
+		}
+
+		fmt.Printf("%d\n", e.Balance)
 	case api.BetEvent:
 		fmt.Printf("%s bets %d\n", e.PlayerName, e.Bet)
 	case api.DealCardsEvent:
@@ -71,6 +77,11 @@ func (c *CLIPlayer) Listen(ev api.GameEvent) {
 		}
 
 		fmt.Printf("\nDealer's Score: %d\n", api.CalculateScore(e.DealerHand).Value)
+	case api.DoubleDownEvent:
+		fmt.Printf("--- %s doubles down! ---\n", e.PlayerName)
+		fmt.Printf("%s got dealt %s\n", e.PlayerName, e.Card)
+	case api.BlackjackEvent:
+		fmt.Printf("--- %s got Blackjack! ---\n", e.PlayerName)
 	case api.HitEvent:
 		fmt.Printf("--- %s hits! ---\n", e.PlayerName)
 		fmt.Printf("Got %s\n", e.Card)
@@ -88,6 +99,9 @@ func (c *CLIPlayer) Listen(ev api.GameEvent) {
 				continue
 			} else if res.Outcome == api.DealerBusted {
 				fmt.Printf("Dealer Busted! %s won!\n", name)
+				continue
+			} else if res.Outcome == api.PlayerBlackjack {
+				fmt.Printf("%s has Blackjack! %s won!", name, name)
 				continue
 			}
 
@@ -158,9 +172,6 @@ func main() {
 	playersCnt := flag.Int("players", 1, "number of players in game")
 	flag.Parse()
 
-	// TODO: Add betting to player struct
-	// TODO: Payout at resolution state
-	// TODO: Add blackjack state
 	// TODO: Add splitting state
 	blackjack.Play(*playersCnt, &CLIPlayer{})
 }

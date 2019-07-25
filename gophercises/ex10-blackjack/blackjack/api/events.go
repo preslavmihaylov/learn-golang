@@ -6,6 +6,7 @@ type GameEvent interface{}
 
 type StartBetEvent struct {
 	PlayerName string
+	Balance    int
 }
 
 type BetEvent struct {
@@ -40,6 +41,15 @@ type StandEvent struct {
 	PlayerName string
 }
 
+type BlackjackEvent struct {
+	PlayerName string
+}
+
+type DoubleDownEvent struct {
+	PlayerName string
+	Card       decks.Card
+}
+
 type RoundEndsEvent struct{}
 
 type Outcome uint8
@@ -48,6 +58,7 @@ const (
 	Lost Outcome = iota
 	Tied
 	Won
+	PlayerBlackjack
 	Busted
 	DealerBusted
 )
