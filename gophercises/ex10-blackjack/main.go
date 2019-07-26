@@ -172,6 +172,5 @@ func main() {
 	playersCnt := flag.Int("players", 1, "number of players in game")
 	flag.Parse()
 
-	// TODO: Add splitting state
 	blackjack.Play(*playersCnt, &CLIPlayer{})
 }

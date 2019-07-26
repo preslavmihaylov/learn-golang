@@ -75,11 +75,11 @@ func (p *player) Split() (Player, Player) {
 	return &p1, &p2
 }
 
-func (p1 *player) Unsplit(p2 Player) {
+func (p *player) Unsplit(p2 Player) {
 	suffixLen := len(" (split 1)")
-	p1.name = p1.name[:len(p1.name)-suffixLen]
-	p1.isSplit = false
-	p1.balance += p2.Balance()
+	p.name = p.name[:len(p.name)-suffixLen]
+	p.isSplit = false
+	p.balance += p2.Balance()
 }
 
 func (p *player) DoubleDown() {

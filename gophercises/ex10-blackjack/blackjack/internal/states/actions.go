@@ -7,7 +7,7 @@ import (
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/internal/data"
 )
 
-func betActions(gd *data.GameData) gameState {
+func betActions(gd *data.GameData) GameState {
 	acts := api.NewActions(&api.BetAction{})
 	for {
 		a := gd.API().BetTurn(acts)
@@ -34,7 +34,7 @@ func betActions(gd *data.GameData) gameState {
 	}
 }
 
-func playerActions(gd *data.GameData) gameState {
+func playerActions(gd *data.GameData) GameState {
 	acts := api.NewActions(&api.HitAction{}, &api.StandAction{})
 
 	pl := gd.CurrentPlayer()
