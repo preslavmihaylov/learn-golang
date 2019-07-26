@@ -1,24 +1,12 @@
 package states
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex09-deck/decks"
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/api"
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/internal/data"
 )
 
 type gameState func(data *data.GameData) gameState
-
-func delayedTransition(gs gameState) gameState {
-	time.Sleep(time.Second * 2)
-	return gs
-}
-
-func transition(gs gameState) gameState {
-	return gs
-}
 
 func InitState(gd *data.GameData) gameState {
 	return transition(betState)
@@ -36,33 +24,7 @@ func betState(gd *data.GameData) gameState {
 		Balance:    pl.Balance(),
 	})
 
-	var a api.Action
-	as := api.NewActions(&api.BetAction{})
-	for {
-		gameAPI := gd.API()
-		a = gameAPI.BetTurn(as)
-		if a == nil {
-			continue
-		}
-
-		switch act := a.(type) {
-		case *api.BetAction:
-			pl.Bet(act.Bet)
-			gd.API().Listen(api.BetEvent{
-				PlayerName: pl.Name(),
-				Bet:        act.Bet,
-			})
-
-			gd.NextPlayersTurn()
-			return delayedTransition(betState)
-		case *api.HelpAction:
-			for _, a := range as {
-				fmt.Printf("\t%s - %s\n", a.String(), a.Help())
-			}
-		default:
-			// continue
-		}
-	}
+	return betActions(gd)
 }
 
 func dealState(gd *data.GameData) gameState {
@@ -108,57 +70,7 @@ func playerTurnState(gd *data.GameData) gameState {
 		return delayedTransition(playerTurnState)
 	}
 
-	var a api.Action
-	acts := api.NewActions(&api.HitAction{}, &api.StandAction{})
-	if pl.CanDoubleDown() {
-		acts = append([]api.Action{&api.DoubleAction{}}, acts...)
-	}
-
-	if pl.CanSplit() {
-		acts = append([]api.Action{&api.SplitAction{}}, acts...)
-	}
-
-	for {
-		pi := gd.API()
-		a = pi.PlayerTurn(acts)
-		if a == nil {
-			continue
-		}
-
-		switch a.(type) {
-		case *api.HitAction:
-			return delayedTransition(hitState)
-		case *api.StandAction:
-			return delayedTransition(standState)
-		case *api.DoubleAction:
-			c := gd.Draw()
-			pl.Deal(c)
-			pl.DoubleDown()
-			gd.NextPlayersTurn()
-
-			gd.API().Listen(api.DoubleDownEvent{
-				PlayerName: pl.Name(),
-				Card:       c,
-			})
-
-			return delayedTransition(playerTurnState)
-		case *api.SplitAction:
-			gd.SplitCurrentPlayer()
-			gd.API().Listen(api.SplitEvent{
-				PlayerName: pl.Name(),
-			})
-
-			return delayedTransition(playerTurnState)
-		case *api.ExitAction:
-			return transition(exitState)
-		case *api.HelpAction:
-			for _, a := range acts {
-				fmt.Printf("\t%s - %s\n", a.String(), a.Help())
-			}
-		default:
-			// continue
-		}
-	}
+	return playerActions(gd)
 }
 
 func dealerTurnState(gd *data.GameData) gameState {
@@ -166,7 +78,7 @@ func dealerTurnState(gd *data.GameData) gameState {
 	ev.PlayersInGame = make(map[string][]decks.Card)
 
 	for _, p := range gd.Players() {
-		if !p.Busted() {
+		if !p.IsBusted() {
 			ev.PlayersInGame[p.Name()] = p.Hand()
 		}
 	}
@@ -196,9 +108,9 @@ func resolveState(gd *data.GameData) gameState {
 			DealerScore: gd.Dealer.Score(),
 		}
 
-		if p.Busted() {
+		if p.IsBusted() {
 			res.Outcome = api.Busted
-		} else if gd.Dealer.Busted() {
+		} else if gd.Dealer.IsBusted() {
 			res.Outcome = api.DealerBusted
 		} else if p.HasBlackjack() {
 			res.Outcome = api.PlayerBlackjack
@@ -211,6 +123,8 @@ func resolveState(gd *data.GameData) gameState {
 		}
 
 		if res.Outcome == api.Won || res.Outcome == api.DealerBusted {
+			p.Payout(1)
+		} else if res.Outcome == api.PlayerBlackjack && p.IsSplit() {
 			p.Payout(1)
 		} else if res.Outcome == api.PlayerBlackjack {
 			p.Payout(1.5)
@@ -244,7 +158,7 @@ func hitState(gd *data.GameData) gameState {
 	player.Deal(c)
 	ev.Card = c
 
-	if player.Busted() {
+	if player.IsBusted() {
 		ev.Busted = true
 	}
 
@@ -253,12 +167,12 @@ func hitState(gd *data.GameData) gameState {
 	var nextState gameState
 	if !gd.IsDealersTurn() {
 		nextState = playerTurnState
-		if player.Busted() {
+		if player.IsBusted() {
 			gd.NextPlayersTurn()
 		}
 	} else {
 		nextState = dealerTurnState
-		if player.Busted() {
+		if player.IsBusted() {
 			nextState = resolveState
 		}
 	}
@@ -275,30 +189,18 @@ func standState(gd *data.GameData) gameState {
 	gd.API().Listen(ev)
 	var nextState gameState
 	if !gd.IsDealersTurn() {
-		nextState = delayedTransition(playerTurnState)
+		nextState = playerTurnState
 	} else {
-		nextState = delayedTransition(resolveState)
+		nextState = resolveState
 	}
 
 	if !gd.IsDealersTurn() {
 		gd.NextPlayersTurn()
 	}
 
-	return nextState
+	return delayedTransition(nextState)
 }
 
 func exitState(gd *data.GameData) gameState {
 	return nil
-}
-
-func dealerShouldPlay(data *data.GameData) bool {
-	d := data.Dealer
-	for _, p := range data.Players() {
-		if !p.HasBlackjack() && !p.Busted() && d.Score() <= p.Score() &&
-			(d.Score() <= 16 || (d.Score() == 17 && d.HasSoftScore())) {
-			return true
-		}
-	}
-
-	return false
 }

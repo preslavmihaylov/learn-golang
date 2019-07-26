@@ -38,10 +38,6 @@ func New(decksCnt, playersCnt int, api bjapi.BlackjackAPI) *GameData {
 }
 
 func (gd *GameData) Draw() decks.Card {
-	if gd == nil {
-		log.Fatalf("blackjack data is nil")
-	}
-
 	if gd.deck == nil {
 		log.Fatalf("deck is nil")
 	}
@@ -90,6 +86,8 @@ func (gd *GameData) SplitCurrentPlayer() {
 	p1, p2 := pl.Split()
 
 	gd.players[gd.playerTurn] = p1
+
+	// insert second split player
 	gd.players = append(gd.players[:gd.playerTurn+1],
 		append([]Player{p2}, gd.players[gd.playerTurn+1:len(gd.players)]...)...)
 }

@@ -7,9 +7,9 @@ import (
 
 type Dealer interface {
 	Player
-	Revealed() bool
 	Reveal()
 	Hide()
+	Revealed() bool
 }
 
 type dealer struct {
@@ -22,12 +22,8 @@ func NewDealer(name string) Dealer {
 }
 
 func (d *dealer) Score() int {
-	if len(d.Hand()) == 0 {
-		return 0
-	}
-
 	if d.Revealed() {
-		return api.CalculateScore(d.Hand()).Value
+		return d.Player.Score()
 	}
 
 	return api.CalculateScore(d.Hand()[:1]).Value
@@ -45,18 +41,14 @@ func (d *dealer) Hand() []decks.Card {
 	return d.Player.Hand()[:1]
 }
 
-func (d *dealer) Deal(c decks.Card) {
-	d.Player.Deal(c)
-}
-
-func (d *dealer) Revealed() bool {
-	return d.revealed
-}
-
 func (d *dealer) Reveal() {
 	d.revealed = true
 }
 
 func (d *dealer) Hide() {
 	d.revealed = false
+}
+
+func (d *dealer) Revealed() bool {
+	return d.revealed
 }

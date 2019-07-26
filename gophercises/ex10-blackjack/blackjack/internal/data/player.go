@@ -10,22 +10,22 @@ import (
 type Player interface {
 	Name() string
 	Hand() []decks.Card
-	Deal(c decks.Card)
+	Discard() []decks.Card
 	Split() (Player, Player)
 	Unsplit(p2 Player)
-	Balance() int
-	Bet(amount int)
 	DoubleDown()
+	Deal(c decks.Card)
+	Bet(amount int)
 	Payout(coef float64)
 	LoseBet()
-	Discard() []decks.Card
+	Balance() int
 	Score() int
-	IsSplit() bool
 	HasSoftScore() bool
 	HasBlackjack() bool
 	CanDoubleDown() bool
 	CanSplit() bool
-	Busted() bool
+	IsSplit() bool
+	IsBusted() bool
 }
 
 type player struct {
@@ -44,17 +44,15 @@ func (p *player) Name() string {
 	return p.name
 }
 
-func (p *player) Balance() int {
-	return p.balance
+func (p *player) Hand() []decks.Card {
+	return p.hand
 }
 
-func (p *player) Bet(amount int) {
-	p.balance -= amount
-	p.bet = amount
-}
+func (p *player) Discard() []decks.Card {
+	cards := p.hand
+	p.hand = nil
 
-func (p *player) IsSplit() bool {
-	return p.isSplit
+	return cards
 }
 
 func (p *player) Split() (Player, Player) {
@@ -89,14 +87,27 @@ func (p *player) DoubleDown() {
 	p.bet += p.bet
 }
 
-func (p *player) LoseBet() {
-	p.bet = 0
+func (p *player) Deal(c decks.Card) {
+	p.hand = append(p.hand, c)
+}
+
+func (p *player) Bet(amount int) {
+	p.balance -= amount
+	p.bet = amount
 }
 
 func (p *player) Payout(coef float64) {
 	winning := float64(p.bet) * coef
 	p.balance += p.bet + int(winning)
 	p.bet = 0
+}
+
+func (p *player) LoseBet() {
+	p.bet = 0
+}
+
+func (p *player) Balance() int {
+	return p.balance
 }
 
 func (p *player) Score() int {
@@ -136,21 +147,10 @@ func (p *player) CanSplit() bool {
 		!p.IsSplit()
 }
 
-func (p *player) Hand() []decks.Card {
-	return p.hand
+func (p *player) IsSplit() bool {
+	return p.isSplit
 }
 
-func (p *player) Discard() []decks.Card {
-	cards := p.hand
-	p.hand = nil
-
-	return cards
-}
-
-func (p *player) Deal(c decks.Card) {
-	p.hand = append(p.hand, c)
-}
-
-func (p *player) Busted() bool {
+func (p *player) IsBusted() bool {
 	return p.Score() > 21
 }
