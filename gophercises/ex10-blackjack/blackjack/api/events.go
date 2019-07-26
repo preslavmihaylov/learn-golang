@@ -50,6 +50,10 @@ type DoubleDownEvent struct {
 	Card       decks.Card
 }
 
+type SplitEvent struct {
+	PlayerName string
+}
+
 type RoundEndsEvent struct{}
 
 type Outcome uint8

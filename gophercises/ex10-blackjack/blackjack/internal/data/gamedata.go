@@ -85,10 +85,32 @@ func (gd *GameData) NextPlayersTurn() {
 	}
 }
 
+func (gd *GameData) SplitCurrentPlayer() {
+	pl := gd.players[gd.playerTurn]
+	p1, p2 := pl.Split()
+
+	gd.players[gd.playerTurn] = p1
+	gd.players = append(gd.players[:gd.playerTurn+1],
+		append([]Player{p2}, gd.players[gd.playerTurn+1:len(gd.players)]...)...)
+}
+
 func (gd *GameData) NewRound() {
 	gd.playerTurn = 0
 	for i := range gd.players {
 		gd.Discard(gd.players[i].Discard())
+	}
+
+	for i := 0; i < len(gd.players); i++ {
+		if gd.players[i].IsSplit() {
+			if gd.players[i].IsSplit() && i+1 >= len(gd.players) {
+				log.Fatalf("Found single split player at the end of players slice")
+			} else if !gd.players[i+1].IsSplit() {
+				log.Fatalf("Found split player without its other half")
+			}
+
+			gd.players[i].Unsplit(gd.players[i+1])
+			gd.players = append(gd.players[:i+1], gd.players[i+2:]...)
+		}
 	}
 
 	gd.Discard(gd.Dealer.Discard())

@@ -110,8 +110,12 @@ func playerTurnState(gd *data.GameData) gameState {
 
 	var a api.Action
 	acts := api.NewActions(&api.HitAction{}, &api.StandAction{})
-	if pl.CanDouble() {
+	if pl.CanDoubleDown() {
 		acts = append([]api.Action{&api.DoubleAction{}}, acts...)
+	}
+
+	if pl.CanSplit() {
+		acts = append([]api.Action{&api.SplitAction{}}, acts...)
 	}
 
 	for {
@@ -135,6 +139,13 @@ func playerTurnState(gd *data.GameData) gameState {
 			gd.API().Listen(api.DoubleDownEvent{
 				PlayerName: pl.Name(),
 				Card:       c,
+			})
+
+			return delayedTransition(playerTurnState)
+		case *api.SplitAction:
+			gd.SplitCurrentPlayer()
+			gd.API().Listen(api.SplitEvent{
+				PlayerName: pl.Name(),
 			})
 
 			return delayedTransition(playerTurnState)
@@ -235,27 +246,24 @@ func hitState(gd *data.GameData) gameState {
 
 	if player.Busted() {
 		ev.Busted = true
-		if !gd.IsDealersTurn() {
-			gd.NextPlayersTurn()
-		}
 	}
 
 	gd.API().Listen(ev)
 
 	var nextState gameState
 	if !gd.IsDealersTurn() {
-		nextState = delayedTransition(playerTurnState)
+		nextState = playerTurnState
 		if player.Busted() {
-			nextState = delayedTransition(dealerTurnState)
+			gd.NextPlayersTurn()
 		}
 	} else {
-		nextState = delayedTransition(dealerTurnState)
+		nextState = dealerTurnState
 		if player.Busted() {
-			nextState = delayedTransition(resolveState)
+			nextState = resolveState
 		}
 	}
 
-	return nextState
+	return delayedTransition(nextState)
 }
 
 func standState(gd *data.GameData) gameState {

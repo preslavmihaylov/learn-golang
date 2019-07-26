@@ -116,6 +116,18 @@ func (_ *DoubleAction) Help() string {
 	return "double the bet and play only one card more"
 }
 
+type SplitAction struct {
+	NoArgsAction
+}
+
+func (_ *SplitAction) String() string {
+	return "split"
+}
+
+func (_ *SplitAction) Help() string {
+	return "split the current hand"
+}
+
 type ExitAction struct {
 	NoArgsAction
 }
