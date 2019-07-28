@@ -26,6 +26,8 @@ func betActions(gd *data.GameData) GameState {
 
 			gd.NextPlayersTurn()
 			return transition(betState)
+		case *api.ExitAction:
+			return transition(exitState)
 		case *api.HelpAction:
 			printHelp(acts)
 		default:
