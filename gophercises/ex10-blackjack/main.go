@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack"
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/api"
@@ -118,6 +119,7 @@ func (c *CLIPlayer) Listen(ev api.GameEvent) {
 		fmt.Println("--- Round Ends ---")
 	}
 
+	time.Sleep(1 * time.Second)
 }
 
 func (c *CLIPlayer) PlayerTurn(actions []api.Action) api.Action {

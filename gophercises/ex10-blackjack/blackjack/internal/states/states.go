@@ -46,7 +46,7 @@ func dealState(gd *data.GameData) GameState {
 
 	gd.API().Listen(ev)
 
-	return delayedTransition(playerTurnState)
+	return transition(playerTurnState)
 }
 
 func playerTurnState(gd *data.GameData) GameState {
@@ -67,7 +67,7 @@ func playerTurnState(gd *data.GameData) GameState {
 		})
 
 		gd.NextPlayersTurn()
-		return delayedTransition(playerTurnState)
+		return transition(playerTurnState)
 	}
 
 	return playerActions(gd)
@@ -92,10 +92,10 @@ func dealerTurnState(gd *data.GameData) GameState {
 
 	gd.API().Listen(ev)
 	if dealerShouldPlay(gd) {
-		return delayedTransition(hitState)
+		return transition(hitState)
 	}
 
-	return delayedTransition(standState)
+	return transition(standState)
 }
 
 func resolveState(gd *data.GameData) GameState {
@@ -138,14 +138,14 @@ func resolveState(gd *data.GameData) GameState {
 	}
 
 	gd.API().Listen(ev)
-	return delayedTransition(roundEndsState)
+	return transition(roundEndsState)
 }
 
 func roundEndsState(gd *data.GameData) GameState {
 	gd.API().Listen(api.RoundEndsEvent{})
 	gd.NewRound()
 
-	return delayedTransition(betState)
+	return transition(betState)
 }
 
 func hitState(gd *data.GameData) GameState {
@@ -177,7 +177,7 @@ func hitState(gd *data.GameData) GameState {
 		}
 	}
 
-	return delayedTransition(nextState)
+	return transition(nextState)
 }
 
 func standState(gd *data.GameData) GameState {
@@ -198,7 +198,7 @@ func standState(gd *data.GameData) GameState {
 		gd.NextPlayersTurn()
 	}
 
-	return delayedTransition(nextState)
+	return transition(nextState)
 }
 
 func exitState(gd *data.GameData) GameState {

@@ -25,7 +25,7 @@ func betActions(gd *data.GameData) GameState {
 			})
 
 			gd.NextPlayersTurn()
-			return delayedTransition(betState)
+			return transition(betState)
 		case *api.HelpAction:
 			printHelp(acts)
 		default:
@@ -54,9 +54,9 @@ func playerActions(gd *data.GameData) GameState {
 
 		switch a.(type) {
 		case *api.HitAction:
-			return delayedTransition(hitState)
+			return transition(hitState)
 		case *api.StandAction:
-			return delayedTransition(standState)
+			return transition(standState)
 		case *api.DoubleAction:
 			c := gd.Draw()
 			pl.Deal(c)
@@ -67,14 +67,14 @@ func playerActions(gd *data.GameData) GameState {
 			})
 
 			gd.NextPlayersTurn()
-			return delayedTransition(playerTurnState)
+			return transition(playerTurnState)
 		case *api.SplitAction:
 			gd.SplitCurrentPlayer()
 			gd.API().Listen(api.SplitEvent{
 				PlayerName: pl.Name(),
 			})
 
-			return delayedTransition(playerTurnState)
+			return transition(playerTurnState)
 		case *api.ExitAction:
 			return transition(exitState)
 		case *api.HelpAction:
