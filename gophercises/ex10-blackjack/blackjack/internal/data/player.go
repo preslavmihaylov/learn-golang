@@ -129,16 +129,7 @@ func (p *player) HasBlackjack() bool {
 }
 
 func (p *player) CanDoubleDown() bool {
-	if len(p.hand) != 2 {
-		return false
-	}
-
-	score := p.Score()
-	if p.HasSoftScore() {
-		score -= 10
-	}
-
-	return score >= 9 && score <= 11
+	return len(p.hand) == 2
 }
 
 func (p *player) CanSplit() bool {

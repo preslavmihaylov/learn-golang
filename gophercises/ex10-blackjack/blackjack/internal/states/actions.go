@@ -2,6 +2,8 @@ package states
 
 import (
 	"fmt"
+	"log"
+	"reflect"
 
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/api"
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/internal/data"
@@ -13,6 +15,8 @@ func betActions(gd *data.GameData) GameState {
 		a := gd.API().BetTurn(acts)
 		if a == nil {
 			continue
+		} else if !isActionAvailable(acts, a) {
+			log.Fatalf("Invalid action supplied: %s", a)
 		}
 
 		switch act := a.(type) {
@@ -52,6 +56,8 @@ func playerActions(gd *data.GameData) GameState {
 		a := gd.API().PlayerTurn(acts)
 		if a == nil {
 			continue
+		} else if !isActionAvailable(acts, a) {
+			log.Fatalf("Invalid action supplied: %s", a)
 		}
 
 		switch a.(type) {
@@ -85,6 +91,16 @@ func playerActions(gd *data.GameData) GameState {
 			// continue
 		}
 	}
+}
+
+func isActionAvailable(acts []api.Action, term api.Action) bool {
+	for _, act := range acts {
+		if reflect.TypeOf(act) == reflect.TypeOf(term) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func dealerShouldPlay(data *data.GameData) bool {

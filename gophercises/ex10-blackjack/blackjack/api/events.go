@@ -1,3 +1,5 @@
+//go:generate stringer -type=Outcome
+
 package api
 
 import "github.com/preslavmihaylov/learn-golang/gophercises/ex09-deck/decks"
