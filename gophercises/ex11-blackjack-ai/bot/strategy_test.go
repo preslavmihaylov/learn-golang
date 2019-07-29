@@ -18,7 +18,6 @@ type TurnData struct {
 func TestHardTotals(t *testing.T) {
 	tests := []TurnData{
 		// score >= 17
-		TurnData{handWith(decks.Ten, decks.Ten), handWith(decks.Five), &api.StandAction{}},
 		TurnData{handWith(decks.Ten, decks.Nine), handWith(decks.Five), &api.StandAction{}},
 		TurnData{handWith(decks.Ten, decks.Eight), handWith(decks.Five), &api.StandAction{}},
 		TurnData{handWith(decks.Ten, decks.Seven), handWith(decks.Five), &api.StandAction{}},
@@ -53,10 +52,12 @@ func TestHardTotals(t *testing.T) {
 		TurnData{handWith(decks.Five, decks.Two), handWith(decks.Five), &api.HitAction{}},
 		TurnData{handWith(decks.Four, decks.Two), handWith(decks.Five), &api.HitAction{}},
 		TurnData{handWith(decks.Three, decks.Two), handWith(decks.Five), &api.HitAction{}},
-		TurnData{handWith(decks.Two, decks.Two), handWith(decks.Five), &api.HitAction{}},
 
 		// score <= 11 && len(hand) > 2
 		TurnData{handWith(decks.Seven, decks.Two, decks.Two), handWith(decks.Five), &api.HitAction{}},
+
+		// Invalid length for double
+		TurnData{handWith(decks.Jack), handWith(decks.Four), &api.HitAction{}},
 	}
 
 	turnTest(t, tests)
@@ -95,6 +96,61 @@ func TestSoftTotals(t *testing.T) {
 		TurnData{handWith(decks.Ace, decks.Three), handWith(decks.Four), &api.HitAction{}},
 		TurnData{handWith(decks.Ace, decks.Two), handWith(decks.Four), &api.HitAction{}},
 		TurnData{handWith(decks.Ace, decks.Ace, decks.Two), handWith(decks.Five), &api.HitAction{}},
+	}
+
+	turnTest(t, tests)
+}
+
+func TestSplitRules(t *testing.T) {
+	tests := []TurnData{
+		// Tens
+		TurnData{handWith(decks.Ten, decks.Ten), handWith(decks.Five), &api.StandAction{}},
+
+		// Nines
+		TurnData{handWith(decks.Nine, decks.Nine), handWith(decks.Two), &api.SplitAction{}},
+		TurnData{handWith(decks.Nine, decks.Nine), handWith(decks.Nine), &api.SplitAction{}},
+		TurnData{handWith(decks.Nine, decks.Nine), handWith(decks.Ten), &api.StandAction{}},
+
+		// Eights
+		TurnData{handWith(decks.Eight, decks.Eight), handWith(decks.Two), &api.SplitAction{}},
+		TurnData{handWith(decks.Eight, decks.Eight), handWith(decks.Ten), &api.SplitAction{}},
+
+		// Sevens
+		TurnData{handWith(decks.Seven, decks.Seven), handWith(decks.Two), &api.SplitAction{}},
+		TurnData{handWith(decks.Seven, decks.Seven), handWith(decks.Seven), &api.SplitAction{}},
+		TurnData{handWith(decks.Seven, decks.Seven), handWith(decks.Eight), &api.HitAction{}},
+
+		// Sixs
+		TurnData{handWith(decks.Six, decks.Six), handWith(decks.Two), &api.SplitAction{}},
+		TurnData{handWith(decks.Six, decks.Six), handWith(decks.Six), &api.SplitAction{}},
+		TurnData{handWith(decks.Six, decks.Six), handWith(decks.Seven), &api.HitAction{}},
+
+		// Fives
+		TurnData{handWith(decks.Five, decks.Five), handWith(decks.Two), &api.DoubleAction{}},
+		TurnData{handWith(decks.Five, decks.Five), handWith(decks.Nine), &api.DoubleAction{}},
+		TurnData{handWith(decks.Five, decks.Five), handWith(decks.Ten), &api.HitAction{}},
+
+		// Fours
+		TurnData{handWith(decks.Four, decks.Four), handWith(decks.Five), &api.SplitAction{}},
+		TurnData{handWith(decks.Four, decks.Four), handWith(decks.Six), &api.SplitAction{}},
+		TurnData{handWith(decks.Four, decks.Four), handWith(decks.Four), &api.HitAction{}},
+
+		// Threes
+		TurnData{handWith(decks.Three, decks.Three), handWith(decks.Two), &api.SplitAction{}},
+		TurnData{handWith(decks.Three, decks.Three), handWith(decks.Seven), &api.SplitAction{}},
+		TurnData{handWith(decks.Three, decks.Three), handWith(decks.Eight), &api.HitAction{}},
+
+		// Twos
+		TurnData{handWith(decks.Two, decks.Two), handWith(decks.Two), &api.SplitAction{}},
+		TurnData{handWith(decks.Two, decks.Two), handWith(decks.Seven), &api.SplitAction{}},
+		TurnData{handWith(decks.Two, decks.Two), handWith(decks.Eight), &api.HitAction{}},
+
+		// Aces
+		TurnData{handWith(decks.Ace, decks.Ace), handWith(decks.Ace), &api.SplitAction{}},
+		TurnData{handWith(decks.Ace, decks.Ace), handWith(decks.Ten), &api.SplitAction{}},
+
+		// Invalid hand for split
+		TurnData{handWith(decks.Ace, decks.Ace, decks.Two), handWith(decks.Ten), &api.HitAction{}},
 	}
 
 	turnTest(t, tests)

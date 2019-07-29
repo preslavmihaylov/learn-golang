@@ -32,6 +32,19 @@ func (bb *BlackjackStrategy) Listen(e api.GameEvent) {
 		bb.dealerHand = ev.DealerHand
 
 		log.Printf("[PlayerTurnEvent]: Received %s %s", bb.playerHand, bb.dealerHand)
+	case api.DealerTurnEvent:
+		log.Printf("[DealerTurnEvent] Dealer's hand: %s", ev.DealerHand)
+	case api.DoubleDownEvent:
+		log.Printf("[DoubleDownEvent]: Received %s", ev.Card)
+	case api.HitEvent:
+		log.Printf("[HitEvent]: %s hits. Received %s", ev.PlayerName, ev.Card)
+		if ev.Busted {
+			log.Printf("[HitEvent]: %s busted!", ev.PlayerName)
+		}
+	case api.StandEvent:
+		log.Printf("[StandEvent] %s stands", ev.PlayerName)
+	case api.BlackjackEvent:
+		log.Println("[PlayerBlackjack] Got Blackjack!")
 	case api.ResolveEvent:
 		for _, res := range ev.Results {
 			if res.Outcome == api.PlayerBlackjack ||
@@ -45,7 +58,7 @@ func (bb *BlackjackStrategy) Listen(e api.GameEvent) {
 				bb.Stats.HandsLost++
 			}
 
-			log.Printf("[ResolveEvent]: Outcome=%d", res.Outcome)
+			log.Printf("[ResolveEvent]: Outcome=%s", res.Outcome)
 		}
 	case api.RoundEndsEvent:
 		bb.roundsCnt--
@@ -57,7 +70,6 @@ func (bb *BlackjackStrategy) Listen(e api.GameEvent) {
 
 func (bb *BlackjackStrategy) BetTurn(actions []api.Action) api.Action {
 	if bb.roundsCnt <= 0 {
-		log.Println("[Bet Turn]: exit")
 		return &api.ExitAction{}
 	}
 
@@ -75,9 +87,9 @@ func (bb *BlackjackStrategy) PlayerTurn(actions []api.Action) api.Action {
 		bb.hasSplit = true
 		res = bb.splitRules()
 	} else if playerScore.IsSoft {
-		res = bb.softTotals()
+		res = bb.softRules()
 	} else {
-		res = bb.hardTotals()
+		res = bb.hardRules()
 	}
 
 	log.Printf("[PlayerTurn]: %s", res)
@@ -112,7 +124,7 @@ func (bb *BlackjackStrategy) splitRules() api.Action {
 		return &api.HitAction{}
 	case decks.Five:
 		if dealerScore.Value >= 2 && dealerScore.Value < 10 {
-			return &api.SplitAction{}
+			return &api.DoubleAction{}
 		}
 
 		return &api.HitAction{}
@@ -131,13 +143,13 @@ func (bb *BlackjackStrategy) splitRules() api.Action {
 
 		return &api.HitAction{}
 	case decks.Ace:
+		fallthrough
+	default:
 		return &api.SplitAction{}
 	}
-
-	return &api.StandAction{}
 }
 
-func (bb *BlackjackStrategy) softTotals() api.Action {
+func (bb *BlackjackStrategy) softRules() api.Action {
 	playerScore := api.CalculateScore(bb.playerHand)
 	dealerScore := api.CalculateScore(bb.dealerHand)
 	if playerScore.Value == 20 {
@@ -175,7 +187,7 @@ func (bb *BlackjackStrategy) softTotals() api.Action {
 	return &api.HitAction{}
 }
 
-func (bb *BlackjackStrategy) hardTotals() api.Action {
+func (bb *BlackjackStrategy) hardRules() api.Action {
 	playerScore := api.CalculateScore(bb.playerHand)
 	dealerScore := api.CalculateScore(bb.dealerHand)
 
@@ -191,7 +203,7 @@ func (bb *BlackjackStrategy) hardTotals() api.Action {
 		}
 	}
 
-	if len(bb.playerHand) > 2 {
+	if len(bb.playerHand) != 2 {
 		return &api.HitAction{}
 	}
 

@@ -7,8 +7,8 @@ import (
 )
 
 func main() {
-	// TODO: Splitting tests
 	// TODO: Implement counting: https://www.blackjackapprenticeship.com/blackjack-strategy-charts/
+
 	stats := bot.Simulate(5000)
 	totalHands := stats.HandsWon + stats.HandsTied + stats.HandsLost
 	fmt.Printf("Final Balance: %d\n", stats.Balance)
