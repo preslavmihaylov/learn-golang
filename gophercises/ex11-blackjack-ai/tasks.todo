@@ -1,0 +1,7 @@
+Blackjack AI
+- [ ] bot.Simulate should move hardcoded values to func arguments
+- [ ] Fix Existing Unit Tests
+- [ ] Add Unit Tests for card counting
+
+Deck
+- [ ] Shuffle should reuse rand seed, instead of setting it all over again
