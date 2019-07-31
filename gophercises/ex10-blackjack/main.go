@@ -174,5 +174,5 @@ func main() {
 	playersCnt := flag.Int("players", 1, "number of players in game")
 	flag.Parse()
 
-	blackjack.Play(*playersCnt, &CLIPlayer{})
+	blackjack.Play(3, *playersCnt, &CLIPlayer{})
 }

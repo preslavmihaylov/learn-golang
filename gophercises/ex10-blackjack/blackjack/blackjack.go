@@ -8,9 +8,9 @@ import (
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/internal/states"
 )
 
-func Play(playersCnt int, api bjapi.BlackjackAPI) {
+func Play(decksCnt, playersCnt int, api bjapi.BlackjackAPI) {
 	state := states.InitState
-	gd := data.New(3, playersCnt, api)
+	gd := data.New(decksCnt, playersCnt, api)
 	for state != nil {
 		state = state(gd)
 	}

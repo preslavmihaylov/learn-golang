@@ -6,6 +6,8 @@ import "github.com/preslavmihaylov/learn-golang/gophercises/ex09-deck/decks"
 
 type GameEvent interface{}
 
+type DeckShuffledEvent struct{}
+
 type StartBetEvent struct {
 	PlayerName string
 	Balance    int

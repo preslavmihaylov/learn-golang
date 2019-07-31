@@ -8,10 +8,15 @@ import (
 	bjapi "github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/api"
 )
 
+const (
+	HandSize = 2
+)
+
 type GameData struct {
 	Dealer
 	api        bjapi.BlackjackAPI
 	deck       *decks.Deck
+	decksCnt   int
 	discarded  []decks.Card
 	players    []Player
 	playerTurn int
@@ -21,11 +26,12 @@ func New(decksCnt, playersCnt int, api bjapi.BlackjackAPI) *GameData {
 	var err error
 
 	data := GameData{}
-	data.deck, err = decks.New(decks.WithDecks(3), decks.Shuffle())
+	data.deck, err = decks.New(decks.WithDecks(decksCnt), decks.Shuffle())
 	if err != nil {
 		log.Fatalf("failed to initialize deck: %s", err)
 	}
 
+	data.decksCnt = decksCnt
 	data.api = api
 	for i := 0; i < playersCnt; i++ {
 		data.players = append(data.players, NewPlayer(fmt.Sprintf("Player %d", i+1)))
@@ -42,15 +48,20 @@ func (gd *GameData) Draw() decks.Card {
 		log.Fatalf("deck is nil")
 	}
 
-	if len(gd.deck.Cards) <= 0 {
-		gd.deck.Cards = append(gd.deck.Cards, gd.discarded...)
-		err := gd.deck.Shuffle()
-		if err != nil {
-			log.Fatalf("failed to shuffle the deck: %s", err)
-		}
-	}
-
 	return gd.deck.Draw()
+}
+
+func (gd *GameData) ShouldShuffle() bool {
+	return float64(len(gd.deck.Cards)) <= float64(decks.DeckSize)*1.5
+}
+
+func (gd *GameData) Shuffle() {
+	gd.deck.InsertBottom(gd.discarded)
+	gd.discarded = []decks.Card{}
+	err := gd.deck.Shuffle()
+	if err != nil {
+		log.Fatalf("failed to shuffle the deck: %s", err)
+	}
 }
 
 func (gd *GameData) Discard(cards []decks.Card) {

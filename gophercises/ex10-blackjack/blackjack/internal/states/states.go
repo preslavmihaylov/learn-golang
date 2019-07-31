@@ -28,11 +28,10 @@ func betState(gd *data.GameData) GameState {
 }
 
 func dealState(gd *data.GameData) GameState {
-	handSize := 2
-
 	var ev api.DealCardsEvent
 	ev.Hands = make(map[string][]decks.Card)
-	for i := 0; i < handSize; i++ {
+
+	for i := 0; i < data.HandSize; i++ {
 		for j, p := range gd.Players() {
 			c := gd.Draw()
 			gd.Players()[j].Deal(c)
@@ -144,6 +143,10 @@ func resolveState(gd *data.GameData) GameState {
 func roundEndsState(gd *data.GameData) GameState {
 	gd.API().Listen(api.RoundEndsEvent{})
 	gd.NewRound()
+	if gd.ShouldShuffle() {
+		gd.Shuffle()
+		gd.API().Listen(api.DeckShuffledEvent{})
+	}
 
 	return transition(betState)
 }
