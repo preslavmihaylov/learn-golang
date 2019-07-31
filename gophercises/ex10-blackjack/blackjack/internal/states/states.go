@@ -40,7 +40,9 @@ func dealState(gd *data.GameData) GameState {
 
 		c := gd.Draw()
 		gd.Dealer.Deal(c)
-		ev.DealerHand = append(ev.DealerHand, c)
+		if i == 0 {
+			ev.DealerHand = append(ev.DealerHand, c)
+		}
 	}
 
 	gd.API().Listen(ev)

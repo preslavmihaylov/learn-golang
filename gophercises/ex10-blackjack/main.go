@@ -35,7 +35,7 @@ func (c *CLIPlayer) Listen(ev api.GameEvent) {
 			}
 		}
 
-		fmt.Printf("Dealer's hand:")
+		fmt.Printf("Dealer's hand:\n")
 		for _, c := range e.DealerHand {
 			fmt.Printf("\t%s\n", c)
 		}
