@@ -7,14 +7,15 @@ import (
 )
 
 func main() {
-	// TODO: Implement counting: https://www.blackjackapprenticeship.com/blackjack-strategy-charts/
-
-	stats := bot.Simulate(5000)
+	stats := bot.Simulate(50000, 6)
 	totalHands := stats.HandsWon + stats.HandsTied + stats.HandsLost
 	fmt.Printf("Final Balance: %d\n", stats.Balance)
 	fmt.Printf("Hands Won: %d (%.2f%%)\n", stats.HandsWon, percentFromTotal(stats.HandsWon, totalHands))
 	fmt.Printf("Hands Tied: %d (%.2f%%)\n", stats.HandsTied, percentFromTotal(stats.HandsTied, totalHands))
 	fmt.Printf("Hands Lost: %d (%.2f%%)\n", stats.HandsLost, percentFromTotal(stats.HandsLost, totalHands))
+	fmt.Printf("Win-Lose Ratio: %.2f%%-%.2f%%\n",
+		percentFromTotal(stats.HandsWon, totalHands-stats.HandsTied),
+		percentFromTotal(stats.HandsLost, totalHands-stats.HandsTied))
 }
 
 func percentFromTotal(hands, total int) float64 {

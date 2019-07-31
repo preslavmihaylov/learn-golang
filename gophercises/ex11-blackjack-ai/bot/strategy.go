@@ -7,65 +7,25 @@ import (
 	"github.com/preslavmihaylov/learn-golang/gophercises/ex10-blackjack/blackjack/api"
 )
 
-func NewStrategy(roundsCnt int) *BlackjackStrategy {
+func NewStrategy(roundsCnt, decksCnt, betUnit, minTrueCnt int) *BlackjackStrategy {
 	return &BlackjackStrategy{
+		counting: BlackjackCounting{
+			totalDecks: decksCnt,
+			minTrueCnt: minTrueCnt,
+		},
 		roundsCnt: roundsCnt,
+		betUnit:   betUnit,
 	}
 }
 
 type BlackjackStrategy struct {
 	Stats      BlackjackStats
-	roundsCnt  int
-	hasSplit   bool
+	counting   BlackjackCounting
 	playerHand []decks.Card
 	dealerHand []decks.Card
-}
-
-func (bb *BlackjackStrategy) Listen(e api.GameEvent) {
-	switch ev := e.(type) {
-	case api.StartBetEvent:
-		bb.Stats.Balance = ev.Balance
-
-		log.Printf("[StartBetEvent]: Balance=%d", ev.Balance)
-	case api.PlayerTurnEvent:
-		bb.playerHand = ev.PlayerHand
-		bb.dealerHand = ev.DealerHand
-
-		log.Printf("[PlayerTurnEvent]: Received %s %s", bb.playerHand, bb.dealerHand)
-	case api.DealerTurnEvent:
-		log.Printf("[DealerTurnEvent] Dealer's hand: %s", ev.DealerHand)
-	case api.DoubleDownEvent:
-		log.Printf("[DoubleDownEvent]: Received %s", ev.Card)
-	case api.HitEvent:
-		log.Printf("[HitEvent]: %s hits. Received %s", ev.PlayerName, ev.Card)
-		if ev.Busted {
-			log.Printf("[HitEvent]: %s busted!", ev.PlayerName)
-		}
-	case api.StandEvent:
-		log.Printf("[StandEvent] %s stands", ev.PlayerName)
-	case api.BlackjackEvent:
-		log.Println("[PlayerBlackjack] Got Blackjack!")
-	case api.ResolveEvent:
-		for _, res := range ev.Results {
-			if res.Outcome == api.PlayerBlackjack ||
-				res.Outcome == api.DealerBusted ||
-				res.Outcome == api.Won {
-
-				bb.Stats.HandsWon++
-			} else if res.Outcome == api.Tied {
-				bb.Stats.HandsTied++
-			} else {
-				bb.Stats.HandsLost++
-			}
-
-			log.Printf("[ResolveEvent]: Outcome=%s", res.Outcome)
-		}
-	case api.RoundEndsEvent:
-		bb.roundsCnt--
-		bb.hasSplit = false
-
-		log.Printf("[RoundEndsEvent]: %d rounds left", bb.roundsCnt)
-	}
+	roundsCnt  int
+	betUnit    int
+	hasSplit   bool
 }
 
 func (bb *BlackjackStrategy) BetTurn(actions []api.Action) api.Action {
@@ -73,9 +33,10 @@ func (bb *BlackjackStrategy) BetTurn(actions []api.Action) api.Action {
 		return &api.ExitAction{}
 	}
 
-	log.Println("[Bet Turn]: bet 100")
+	bet := bb.counting.unitsToBet() * bb.betUnit
+	log.Printf("[Bet Turn]: bet %d", bet)
 	return &api.BetAction{
-		Bet: 100,
+		Bet: bet,
 	}
 }
 
@@ -92,7 +53,6 @@ func (bb *BlackjackStrategy) PlayerTurn(actions []api.Action) api.Action {
 		res = bb.hardRules()
 	}
 
-	log.Printf("[PlayerTurn]: %s", res)
 	return res
 }
 
