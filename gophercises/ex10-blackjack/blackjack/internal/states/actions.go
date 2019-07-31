@@ -103,16 +103,10 @@ func isActionAvailable(acts []api.Action, term api.Action) bool {
 	return false
 }
 
-func dealerShouldPlay(data *data.GameData) bool {
+func dealerShouldHit(data *data.GameData) bool {
 	d := data.Dealer
-	for _, p := range data.Players() {
-		if !p.HasBlackjack() && !p.IsBusted() && d.Score() <= p.Score() &&
-			(d.Score() <= 16 || (d.Score() == 17 && d.HasSoftScore())) {
-			return true
-		}
-	}
 
-	return false
+	return d.Score() <= 16 || (d.Score() == 17 && d.HasSoftScore())
 }
 
 func printHelp(acts []api.Action) {

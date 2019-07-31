@@ -90,7 +90,7 @@ func dealerTurnState(gd *data.GameData) GameState {
 	ev.DealerHand = gd.Dealer.Hand()
 
 	gd.API().Listen(ev)
-	if dealerShouldPlay(gd) {
+	if dealerShouldHit(gd) {
 		return transition(hitState)
 	}
 
