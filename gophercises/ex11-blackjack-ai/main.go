@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	stats := bot.Simulate(50000, 6)
+	stats := bot.Simulate(100000, 6, 25, 4)
 	totalHands := stats.HandsWon + stats.HandsTied + stats.HandsLost
 	fmt.Printf("Final Balance: %d\n", stats.Balance)
 	fmt.Printf("Hands Won: %d (%.2f%%)\n", stats.HandsWon, percentFromTotal(stats.HandsWon, totalHands))

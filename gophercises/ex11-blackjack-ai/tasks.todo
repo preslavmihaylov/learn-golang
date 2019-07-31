@@ -1,5 +1,4 @@
 Blackjack AI
-- [ ] bot.Simulate should move hardcoded values to func arguments
 - [ ] Fix Existing Unit Tests
 - [ ] Add Unit Tests for card counting
 
