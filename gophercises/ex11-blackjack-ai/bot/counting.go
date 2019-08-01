@@ -32,6 +32,10 @@ func (bc *BlackjackCounting) unitsToBet() int {
 		decksLeft -= 0.5
 	}
 
+	if decksLeft < 0.5 {
+		return 0
+	}
+
 	trueCnt := int(math.Round(float64(bc.runningCnt) / decksLeft))
 
 	if trueCnt < bc.minTrueCnt {
