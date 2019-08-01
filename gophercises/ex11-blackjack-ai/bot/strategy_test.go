@@ -15,6 +15,25 @@ type TurnData struct {
 	ExpectedAction api.Action
 }
 
+func TestStoppingSimulation(t *testing.T) {
+	bs := NewStrategy(0, 5, 5, 5)
+	act := bs.BetTurn([]api.Action{&api.BetAction{}, &api.HelpAction{}, &api.ExitAction{}})
+	switch act.(type) {
+	case *api.ExitAction:
+		// do nothing
+	default:
+		t.Errorf("Expected exit action, got %s", act)
+	}
+}
+
+func TestRoundDecrementing(t *testing.T) {
+	bs := NewStrategy(10, 5, 5, 5)
+	bs.Listen(api.RoundEndsEvent{})
+	if bs.roundsCnt != 9 {
+		t.Errorf("Expected rounds to decrement from 10 to 9 upon round end. Got %d", bs.roundsCnt)
+	}
+}
+
 func TestHardTotals(t *testing.T) {
 	tests := []TurnData{
 		// score >= 17
