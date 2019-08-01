@@ -1,0 +1,5 @@
+Blackjack AI
+- [ ] Abstract basic strategy logic into several multi-dimensional arrays - one for soft totals, one for hard totals, one for splitting
+
+Blackjack
+- [ ] Implement resplitting of cards
