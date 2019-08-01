@@ -1,6 +1,0 @@
-Blackjack AI
-- [ ] Fix Existing Unit Tests
-- [ ] Add Unit Tests for card counting
-
-Deck
-- [ ] Shuffle should reuse rand seed, instead of setting it all over again
