@@ -7,10 +7,11 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 
-	"github.com/gophercises/quiet_hn/hn"
+	"github.com/preslavmihaylov/learn-golang/gophercises/ex13-quiet-hn/hn"
 )
 
 func main() {
@@ -29,7 +30,14 @@ func main() {
 }
 
 func handler(numStories int, tpl *template.Template) http.HandlerFunc {
+	cache := make(map[int]*item)
+	lastCacheReset := time.Now()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if time.Now().Sub(lastCacheReset) > time.Minute*15 {
+			lastCacheReset = time.Now()
+			cache = make(map[int]*item)
+		}
+
 		start := time.Now()
 		var client hn.Client
 		ids, err := client.TopItems()
@@ -37,30 +45,74 @@ func handler(numStories int, tpl *template.Template) http.HandlerFunc {
 			http.Error(w, "Failed to load top stories", http.StatusInternalServerError)
 			return
 		}
-		var stories []item
-		for _, id := range ids {
-			hnItem, err := client.GetItem(id)
-			if err != nil {
-				continue
-			}
-			item := parseHNItem(hnItem)
-			if isStoryLink(item) {
-				stories = append(stories, item)
-				if len(stories) >= numStories {
-					break
+
+		storyCh := make(chan *item, numStories)
+		var stories []*item
+
+		currID := 0
+		fetchedStories := 0
+		for i := 0; i < numStories; i++ {
+			getStory(cache, client, storyCh, ids[currID])
+			currID++
+		}
+
+		for {
+			select {
+			case st := <-storyCh:
+				if st != nil {
+					if _, ok := cache[st.ID]; !ok {
+						cache[st.ID] = st
+					}
+
+					stories = append(stories, st)
+					fetchedStories++
+				} else {
+					getStory(cache, client, storyCh, ids[currID])
+					currID++
 				}
 			}
+
+			if fetchedStories == numStories {
+				close(storyCh)
+				break
+			}
 		}
-		data := templateData{
+
+		sort.Sort(byID(stories))
+		err = tpl.Execute(w, templateData{
 			Stories: stories,
 			Time:    time.Now().Sub(start),
-		}
-		err = tpl.Execute(w, data)
+		})
 		if err != nil {
 			http.Error(w, "Failed to process the template", http.StatusInternalServerError)
 			return
 		}
 	})
+}
+
+func getStory(cache map[int]*item, client hn.Client, storyCh chan *item, id int) {
+	if st, ok := cache[id]; ok {
+		storyCh <- st
+		return
+	}
+
+	go getStoryAsync(client, storyCh, id)
+}
+
+func getStoryAsync(client hn.Client, storyCh chan *item, id int) {
+	hnItem, err := client.GetItem(id)
+	if err != nil {
+		storyCh <- nil
+		return
+	}
+
+	item := parseHNItem(hnItem)
+	if isStoryLink(item) {
+		storyCh <- &item
+		return
+	}
+
+	storyCh <- nil
 }
 
 func isStoryLink(item item) bool {
@@ -83,6 +135,20 @@ type item struct {
 }
 
 type templateData struct {
-	Stories []item
+	Stories []*item
 	Time    time.Duration
+}
+
+type byID []*item
+
+func (s byID) Len() int {
+	return len(s)
+}
+
+func (s byID) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s byID) Less(i, j int) bool {
+	return s[i].ID < s[j].ID
 }
