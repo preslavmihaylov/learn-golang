@@ -3,7 +3,7 @@ FROM debian:latest
 RUN mkdir -p /app
 WORKDIR /app
 
-ADD consignment.json /app/consignment.json
-ADD consignment-cli /app/consignment-cli
+ADD consignment.json .
+ADD consignment-cli .
 
 CMD ["./consignment-cli"]
