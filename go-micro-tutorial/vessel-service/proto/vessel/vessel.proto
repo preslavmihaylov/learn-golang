@@ -4,6 +4,7 @@ package vessel;
 
 service VesselService {
     rpc FindAvailable(Specification) returns (Response) {}
+    rpc Create(Vessel) returns (Response) {}
 }
 
 message Vessel {
