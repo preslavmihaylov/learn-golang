@@ -6,6 +6,13 @@ services:
         ports:
             - 27017:27017
 
+    database:
+        image: postgres
+        ports:
+            - 5433:5432
+        environment:
+            POSTGRES_DB: "shippy.users"
+
     consignment-cli:
         build: ./consignment-cli
         depends_on:
@@ -32,3 +39,15 @@ services:
         environment:
             MICRO_ADDRESS: ":50051"
             DB_HOST: "datastore:27017"
+
+    user-service:
+        build: ./user-service
+        command: "./wait-for-it.sh database:5432 -t 5 -- ./user-service"
+        depends_on:
+            - database
+        ports:
+            - 50053:50051
+        environment:
+            MICRO_ADDRESS: ":50051"
+            DB_HOST: "database"
+            DB_PORT: "5432"
