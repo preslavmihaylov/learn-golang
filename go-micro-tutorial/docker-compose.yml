@@ -40,6 +40,13 @@ services:
             MICRO_ADDRESS: ":50051"
             DB_HOST: "datastore:27017"
 
+    user-cli:
+        build: ./user-cli
+        command: "./wait-for-it.sh user-service:50051 -t 5 -- \
+                  ./user-cli command --name=\"pm\" --email=\"pm@pm.com\" --password=\"test\" --company=\"BBC\""
+        depends_on:
+            - user-service
+
     user-service:
         build: ./user-service
         command: "./wait-for-it.sh database:5432 -t 5 -- ./user-service"

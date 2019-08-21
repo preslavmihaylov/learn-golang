@@ -39,6 +39,7 @@ func main() {
 	}
 	defer db.Close()
 
+	db.AutoMigrate(&proto.User{})
 	repo := userRepository{db}
 	service := userService{&repo}
 	proto.RegisterUserServiceHandler(srv.Server(), &service)

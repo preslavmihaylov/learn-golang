@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/jinzhu/gorm"
 	proto "github.com/preslavmihaylov/learn-golang/go-micro-tutorial/user-service/proto/user"
@@ -33,6 +34,7 @@ func (repo *userRepository) Get(id string) (*proto.User, error) {
 }
 
 func (repo *userRepository) Create(usr *proto.User) error {
+	log.Printf("Creating user: %s", usr)
 	err := repo.db.Create(&usr).Error
 	if err != nil {
 		return fmt.Errorf("failed to create user in db: %s", err)
