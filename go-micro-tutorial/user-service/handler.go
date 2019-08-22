@@ -3,16 +3,25 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 
 	proto "github.com/preslavmihaylov/learn-golang/go-micro-tutorial/user-service/proto/user"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type userService struct {
-	repo *userRepository
+	repo         *userRepository
+	tokenService Authable
 }
 
 func (us *userService) Create(ctx context.Context, usr *proto.User, resp *proto.Response) error {
-	err := us.repo.Create(usr)
+	hPass, err := bcrypt.GenerateFromPassword([]byte(usr.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %s", err)
+	}
+
+	usr.Password = string(hPass)
+	err = us.repo.Create(usr)
 	if err != nil {
 		return fmt.Errorf("failed to create user: %s", err)
 	}
@@ -42,12 +51,22 @@ func (us *userService) GetAll(ctx context.Context, req *proto.Request, resp *pro
 }
 
 func (us *userService) Auth(ctx context.Context, req *proto.User, tok *proto.Token) error {
-	_, err := us.repo.GetByEmailAndPassword(req)
+	log.Printf("Authenticating <%s> (%s)...", req.Email, req.Password)
+	usr, err := us.repo.GetByEmail(req.Email)
 	if err != nil {
-		return fmt.Errorf("failed to authenticate user: %s", err)
+		return fmt.Errorf("user does not exist: %s", err)
 	}
 
-	tok.Token = "testingabc"
+	err = bcrypt.CompareHashAndPassword([]byte(usr.Password), []byte(req.Password))
+	if err != nil {
+		return fmt.Errorf("password mismatch: %s", err)
+	}
+
+	tok.Token, err = us.tokenService.Encode(usr)
+	if err != nil {
+		return fmt.Errorf("failed to encode token: %s", err)
+	}
+
 	return nil
 }
 

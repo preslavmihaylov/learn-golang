@@ -41,7 +41,10 @@ func main() {
 
 	db.AutoMigrate(&proto.User{})
 	repo := userRepository{db}
-	service := userService{&repo}
+	service := userService{
+		repo:         &repo,
+		tokenService: &TokenService{&repo},
+	}
 	proto.RegisterUserServiceHandler(srv.Server(), &service)
 
 	if err = srv.Run(); err != nil {

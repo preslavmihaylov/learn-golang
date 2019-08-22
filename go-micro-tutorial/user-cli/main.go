@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 
@@ -12,11 +11,10 @@ import (
 )
 
 func main() {
-	name := flag.String("name", "pm", "Your full name")
-	email := flag.String("email", "pm@pm.com", "Your Email")
-	password := flag.String("password", "passsecret", "Your Password")
-	company := flag.String("company", "BBC", "Your Company")
-	flag.Parse()
+	name := "pm"
+	email := "pm@pm.com"
+	password := "abcd"
+	company := "BBC"
 
 	cmd.Init()
 
@@ -25,12 +23,12 @@ func main() {
 
 	client := proto.NewUserServiceClient("shippy.user.service", srv.Client())
 
-	fmt.Printf("Creating user: %s %s %s %s\n", *name, *email, *password, *company)
+	fmt.Printf("Creating user: %s %s %s %s\n", name, email, password, company)
 	r, err := client.Create(context.TODO(), &proto.User{
-		Name:     *name,
-		Email:    *email,
-		Password: *password,
-		Company:  *company,
+		Name:     name,
+		Email:    email,
+		Password: password,
+		Company:  company,
 	})
 	if err != nil {
 		log.Fatalf("Could not create: %v", err)
@@ -44,4 +42,24 @@ func main() {
 	for _, v := range getAll.Users {
 		log.Println(v)
 	}
+
+	authResp, err := client.Auth(context.TODO(), &proto.User{
+		Email:    email,
+		Password: password,
+	})
+	if err != nil {
+		log.Fatalf("couldn't authenticate user: %s", err)
+	}
+
+	fmt.Println("Access Token:", authResp)
+
+	authResp, err = client.Auth(context.TODO(), &proto.User{
+		Email:    email,
+		Password: "wrong_pass",
+	})
+	if err == nil {
+		log.Fatalf("[ERR] email with wrong password authenticated successfully!")
+	}
+
+	log.Printf("[EXPECTED] couldn't authenticate user %s (%s): %s", email, "wrong_pass", err)
 }

@@ -43,7 +43,9 @@ func (repo *userRepository) Create(usr *proto.User) error {
 	return nil
 }
 
-func (repo *userRepository) GetByEmailAndPassword(usr *proto.User) (*proto.User, error) {
+func (repo *userRepository) GetByEmail(email string) (*proto.User, error) {
+	usr := &proto.User{}
+	usr.Email = email
 	err := repo.db.First(&usr).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user by email and password from db: %s", err)
