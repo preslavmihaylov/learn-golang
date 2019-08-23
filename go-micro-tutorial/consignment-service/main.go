@@ -3,13 +3,18 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
 
 	"github.com/micro/go-micro"
+	"github.com/micro/go-micro/client"
+	"github.com/micro/go-micro/metadata"
+	"github.com/micro/go-micro/server"
 
 	// Import the generated protobuf code
 	proto "github.com/preslavmihaylov/learn-golang/go-micro-tutorial/consignment-service/proto/consignment"
+	userProto "github.com/preslavmihaylov/learn-golang/go-micro-tutorial/user-service/proto/user"
 	vesselProto "github.com/preslavmihaylov/learn-golang/go-micro-tutorial/vessel-service/proto/vessel"
 )
 
@@ -18,9 +23,39 @@ const (
 	defaultHost = "datastore:27017"
 )
 
+func AuthWrapper(fn server.HandlerFunc) server.HandlerFunc {
+	return func(ctx context.Context, req server.Request, resp interface{}) error {
+		if os.Getenv("DISABLE_AUTH") == "true" {
+			return fn(ctx, req, resp)
+		}
+
+		meta, ok := metadata.FromContext(ctx)
+		if !ok {
+			return errors.New("no auth meta-data found in request")
+		}
+
+		// Note this is now uppercase (not entirely sure why this is...)
+		token := meta["Token"]
+		log.Println("Authenticating with token: ", token)
+
+		// Auth here
+		authClient := userProto.NewUserServiceClient("shippy.user.service", client.DefaultClient)
+		_, err := authClient.ValidateToken(context.Background(), &userProto.Token{
+			Token: token,
+		})
+		if err != nil {
+			return err
+		}
+
+		return fn(ctx, req, resp)
+	}
+}
+
 func main() {
 	srv := micro.NewService(
 		micro.Name("shippy.consignment.service"),
+		micro.Version("latest"),
+		micro.WrapHandler(AuthWrapper),
 	)
 
 	srv.Init()

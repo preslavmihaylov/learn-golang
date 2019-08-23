@@ -29,6 +29,7 @@ services:
         environment:
             MICRO_ADDRESS: ":50051"
             DB_HOST: "datastore:27017"
+            DISABLE_AUTH: "true"
 
     vessel-service:
         build: ./vessel-service

@@ -6,4 +6,4 @@ WORKDIR /app
 ADD consignment.json .
 ADD consignment-cli .
 
-CMD ["./consignment-cli"]
+CMD ./consignment-cli consignment.json TODO_AUTH_TOKEN
