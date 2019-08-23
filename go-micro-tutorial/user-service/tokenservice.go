@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -36,9 +37,13 @@ type TokenService struct {
 func (srv *TokenService) Decode(tokenString string) (*CustomClaims, error) {
 
 	// Parse the token
-	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return authHash, nil
-	})
+	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{},
+		func(token *jwt.Token) (interface{}, error) {
+			return authHash, nil
+		})
+	if err != nil {
+		return nil, fmt.Errorf("couldn't parse token: %s", err)
+	}
 
 	// Validate the token and return the custom claims
 	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {

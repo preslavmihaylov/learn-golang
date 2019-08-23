@@ -71,5 +71,14 @@ func (us *userService) Auth(ctx context.Context, req *proto.User, tok *proto.Tok
 }
 
 func (us *userService) ValidateToken(ctx context.Context, inTok *proto.Token, outTok *proto.Token) error {
+	claims, err := us.tokenService.Decode(inTok.Token)
+	if err != nil {
+		return fmt.Errorf("couldn't decode token: %s", err)
+	}
+
+	if err = claims.Valid(); err != nil {
+		return fmt.Errorf("token is invalid: %s", err)
+	}
+
 	return nil
 }
