@@ -39,7 +39,7 @@ func AuthWrapper(fn server.HandlerFunc) server.HandlerFunc {
 		log.Println("Authenticating with token: ", token)
 
 		// Auth here
-		authClient := userProto.NewUserServiceClient("shippy.user.service", client.DefaultClient)
+		authClient := userProto.NewUserService("shippy.user.service", client.DefaultClient)
 		_, err := authClient.ValidateToken(context.Background(), &userProto.Token{
 			Token: token,
 		})
@@ -73,7 +73,7 @@ func main() {
 	consignmentCollection := client.Database("shippy").Collection("consignments")
 
 	repo := consignmentRepository{consignmentCollection}
-	vesselClient := vesselProto.NewVesselServiceClient("shippy.vessel.service", srv.Client())
+	vesselClient := vesselProto.NewVesselService("shippy.vessel.service", srv.Client())
 
 	proto.RegisterShippingServiceHandler(srv.Server(), &service{&repo, vesselClient})
 

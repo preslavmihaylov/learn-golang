@@ -15,7 +15,7 @@ import (
 // to give you a better idea.
 type service struct {
 	repo         *consignmentRepository
-	vesselClient vesselProto.VesselServiceClient
+	vesselClient vesselProto.VesselService
 }
 
 // CreateConsignment - we created just one method on our service,

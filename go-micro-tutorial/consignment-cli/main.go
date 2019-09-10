@@ -34,7 +34,7 @@ func main() {
 	srv := micro.NewService(micro.Name("shippy.consignment.cli"))
 	srv.Init()
 
-	client := pb.NewShippingServiceClient("shippy.consignment.service", srv.Client())
+	client := pb.NewShippingService("shippy.consignment.service", srv.Client())
 
 	// Contact the server and print out its response.
 	file := defaultFilename

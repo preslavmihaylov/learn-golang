@@ -21,7 +21,7 @@ func main() {
 	srv := micro.NewService(micro.Name("shippy.user.cli"))
 	srv.Init()
 
-	client := proto.NewUserServiceClient("shippy.user.service", srv.Client())
+	client := proto.NewUserService("shippy.user.service", srv.Client())
 
 	fmt.Printf("Creating user: %s %s %s %s\n", name, email, password, company)
 	r, err := client.Create(context.TODO(), &proto.User{
