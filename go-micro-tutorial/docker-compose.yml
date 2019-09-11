@@ -13,6 +13,11 @@ services:
         environment:
             POSTGRES_DB: "shippy.users"
 
+    nats:
+        image: nats
+        ports:
+            - 4222:4222
+
     consignment-cli:
         build: ./consignment-cli
         depends_on:
@@ -53,9 +58,20 @@ services:
         command: "./wait-for-it.sh database:5432 -t 5 -- ./user-service"
         depends_on:
             - database
+            - nats
         ports:
             - 50053:50051
         environment:
             MICRO_ADDRESS: ":50051"
             DB_HOST: "database"
             DB_PORT: "5432"
+
+    email-service:
+        build: ./email-service
+        depends_on:
+            - user-service
+            - nats
+        ports:
+            - 50054:50051
+        environment:
+            MICRO_ADDRESS: ":50051"
