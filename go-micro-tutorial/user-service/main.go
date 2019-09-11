@@ -41,10 +41,13 @@ func main() {
 
 	db.AutoMigrate(&proto.User{})
 	repo := userRepository{db}
+	publisher := micro.NewPublisher("user.created", srv.Client())
 	service := userService{
 		repo:         &repo,
 		tokenService: &TokenService{&repo},
+		Publisher:    publisher,
 	}
+
 	proto.RegisterUserServiceHandler(srv.Server(), &service)
 
 	if err = srv.Run(); err != nil {

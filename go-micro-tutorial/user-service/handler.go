@@ -5,13 +5,17 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/micro/go-micro"
 	proto "github.com/preslavmihaylov/learn-golang/go-micro-tutorial/user-service/proto/user"
 	"golang.org/x/crypto/bcrypt"
 )
 
+const topic = "user.created"
+
 type userService struct {
 	repo         *userRepository
 	tokenService Authable
+	Publisher    micro.Publisher
 }
 
 func (us *userService) Create(ctx context.Context, usr *proto.User, resp *proto.Response) error {
@@ -27,6 +31,11 @@ func (us *userService) Create(ctx context.Context, usr *proto.User, resp *proto.
 	}
 
 	resp.User = usr
+	err = us.Publisher.Publish(ctx, resp)
+	if err != nil {
+		return fmt.Errorf("failed to publish message: %s", err)
+	}
+
 	return nil
 }
 
