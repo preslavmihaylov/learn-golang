@@ -53,7 +53,7 @@ func AuthWrapper(fn server.HandlerFunc) server.HandlerFunc {
 
 func main() {
 	srv := micro.NewService(
-		micro.Name("shippy.consignment.service"),
+		micro.Name("shippy-consignment-service"),
 		micro.Version("latest"),
 		micro.WrapHandler(AuthWrapper),
 	)
@@ -73,7 +73,7 @@ func main() {
 	consignmentCollection := client.Database("shippy").Collection("consignments")
 
 	repo := consignmentRepository{consignmentCollection}
-	vesselClient := vesselProto.NewVesselService("shippy.vessel.service", srv.Client())
+	vesselClient := vesselProto.NewVesselService("shippy-vessel-service", srv.Client())
 
 	proto.RegisterShippingServiceHandler(srv.Server(), &service{&repo, vesselClient})
 

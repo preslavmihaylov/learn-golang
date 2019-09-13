@@ -13,7 +13,7 @@ import (
 
 func main() {
 	srv := micro.NewService(
-		micro.Name("shippy.user.service"),
+		micro.Name("shippy-user-service"),
 	)
 
 	srv.Init()

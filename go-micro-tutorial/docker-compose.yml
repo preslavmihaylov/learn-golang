@@ -1,6 +1,15 @@
 version: '3.1'
 
 services:
+    consul:
+        command: -server -bootstrap -rejoin
+        image: progrium/consul:latest
+        ports:
+            - 8300:8300
+            - 8400:8400
+            - 8500:8500
+            - 8600:53/udp
+
     datastore:
         image: mongo
         ports:
@@ -18,17 +27,38 @@ services:
         ports:
             - 4222:4222
 
+    gateway:
+        image: microhq/micro
+        command: "--server_name=go-micro-api --registry=consul --registry_address=consul:8500 api --enable_rpc --handler=rpc"
+        ports:
+            - 8080:8080
+        depends_on:
+            - consignment-service
+            - user-service
+            - vessel-service
+            - email-service
+            - consul
+        environment:
+            MICRO_API_NAMESPACE: " "
+
     consignment-cli:
         build: ./consignment-cli
+        command: "./consignment-cli --registry=consul --registry_address=consul:8500"
         depends_on:
             - consignment-service
             - vessel-service
+            - consul
+        environment:
+            IN_FILE: "consignment.json"
+            TOKEN: "TODO_AUTH_TOKEN"
     
     consignment-service:
         build: ./consignment-service
+        command: "./consignment-service --registry=consul --registry_address=consul:8500"
         depends_on:
             - datastore
             - vessel-service
+            - consul
         ports:
             - 50051:50051
         environment:
@@ -38,8 +68,10 @@ services:
 
     vessel-service:
         build: ./vessel-service
+        command: "./vessel-service --registry=consul --registry_address=consul:8500"
         depends_on:
             - datastore
+            - consul
         ports:
             - 50052:50051
         environment:
@@ -52,13 +84,18 @@ services:
                   ./user-cli command --name=\"pm\" --email=\"pm@pm.com\" --password=\"test\" --company=\"BBC\""
         depends_on:
             - user-service
+            - consul
+        environment:
+            MICRO_REGISTRY: "consul"
+            MICRO_REGISTRY_ADDRESS: "consul:8500"
 
     user-service:
         build: ./user-service
-        command: "./wait-for-it.sh database:5432 -t 5 -- ./user-service"
+        command: "./wait-for-it.sh database:5432 -t 5 -- ./user-service --registry=consul --registry_address=consul:8500"
         depends_on:
             - database
             - nats
+            - consul
         ports:
             - 50053:50051
         environment:
@@ -68,9 +105,11 @@ services:
 
     email-service:
         build: ./email-service
+        command: "./email-service --registry=consul --registry_address=consul:8500"
         depends_on:
             - user-service
             - nats
+            - consul
         ports:
             - 50054:50051
         environment:

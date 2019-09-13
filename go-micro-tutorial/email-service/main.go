@@ -22,7 +22,7 @@ func (sub *Subscriber) Process(ctx context.Context, usr *proto.User) error {
 func main() {
 	fmt.Println("vim-go")
 	srv := micro.NewService(
-		micro.Name("shippy.email.service"),
+		micro.Name("shippy-email-service"),
 		micro.Version("latest"),
 	)
 

@@ -31,10 +31,10 @@ func parseFile(file string) (*pb.Consignment, error) {
 }
 
 func main() {
-	srv := micro.NewService(micro.Name("shippy.consignment.cli"))
+	srv := micro.NewService(micro.Name("shippy-consignment-cli"))
 	srv.Init()
 
-	client := pb.NewShippingService("shippy.consignment.service", srv.Client())
+	client := pb.NewShippingService("shippy-consignment-service", srv.Client())
 
 	// Contact the server and print out its response.
 	file := defaultFilename
@@ -45,8 +45,17 @@ func main() {
 		log.Fatal("Not enough arguments, expecting file and token")
 	}
 
-	file = os.Args[1]
-	token = os.Args[2]
+	if os.Getenv("IN_FILE") != "" {
+		file = os.Getenv("IN_FILE")
+	} else {
+		log.Fatal("expected IN_FILE to be set")
+	}
+
+	if os.Getenv("TOKEN") != "" {
+		token = os.Getenv("TOKEN")
+	} else {
+		log.Fatal("expected TOKEN to be set")
+	}
 
 	consignment, err := parseFile(file)
 	if err != nil {

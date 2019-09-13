@@ -15,7 +15,7 @@ const (
 )
 
 func main() {
-	srv := micro.NewService(micro.Name("shippy.vessel.service"))
+	srv := micro.NewService(micro.Name("shippy-vessel-service"))
 
 	srv.Init()
 	uri := os.Getenv("DB_HOST")
