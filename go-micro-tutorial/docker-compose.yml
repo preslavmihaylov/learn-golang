@@ -29,7 +29,8 @@ services:
 
     gateway:
         image: microhq/micro
-        command: "--server_name=go-micro-api --registry=consul --registry_address=consul:8500 api --enable_rpc --handler=rpc"
+        # command: "--server_name=go-micro-api --registry=consul --registry_address=consul:8500 api --enable_rpc --handler=rpc"
+        command: "--server_name=go-micro-api --registry=consul --registry_address=consul:8500 api"
         ports:
             - 8080:8080
         depends_on:
