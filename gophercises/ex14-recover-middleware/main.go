@@ -8,10 +8,13 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
+
 	mux.HandleFunc("/panic/", panicDemo)
 	mux.HandleFunc("/panic-after/", panicAfterDemo)
 	mux.HandleFunc("/", hello)
-	log.Fatal(http.ListenAndServe(":3000", mux))
+
+	mw := RecoverMw{}
+	log.Fatal(http.ListenAndServe(":3000", mw.Apply(mux)))
 }
 
 func panicDemo(w http.ResponseWriter, r *http.Request) {
